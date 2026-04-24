@@ -620,10 +620,67 @@ body {
   color: #e07070;
 }
 
-/* ── Header extras ── */
+/* ── Tab bar ── */
 
-.header-workflows-btn {
+.tab-bar {
+  display: flex;
+  background: #1a1a24;
+  border-bottom: 1px solid #2a2a3a;
+  padding: 0 16px;
   flex-shrink: 0;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #8888a0;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 16px;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover { color: #c8c8e0; }
+
+.tab-btn--active {
+  color: #e8e8f0;
+  border-bottom-color: #5b5bf0;
+}
+
+/* ── Workflow Panel ── */
+
+.workflow-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workflow-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.workflow-panel-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.workflow-panel-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.workflow-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #2a2a3a;
+  margin-top: 16px;
 }
 
 /* ── Drag and drop ── */

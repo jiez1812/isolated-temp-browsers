@@ -6,10 +6,9 @@ interface Props {
   workflows: Workflow[]
   onSave: (workflow: Workflow) => void
   onDelete: (id: string) => void
-  onClose: () => void
 }
 
-export default function WorkflowManagerModal({ workflows, onSave, onDelete, onClose }: Props) {
+export default function WorkflowManagerModal({ workflows, onSave, onDelete }: Props) {
   const [editing, setEditing] = useState<Workflow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -34,47 +33,43 @@ export default function WorkflowManagerModal({ workflows, onSave, onDelete, onCl
 
   return (
     <>
-      <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-        <div className="modal modal--lg">
-          <div className="modal-header">
-            <h2>Automation Workflows</h2>
-            <button className="btn-icon" onClick={onClose} aria-label="Close">×</button>
-          </div>
+      <div className="workflow-panel">
+        <div className="workflow-panel-header">
+          <h2>Automation Workflows</h2>
+        </div>
 
-          <div className="modal-body">
-            {workflows.length === 0 ? (
-              <div className="wf-list-empty">
-                <p>No workflows yet. Create one to automate browser actions.</p>
-              </div>
-            ) : (
-              <div className="wf-list">
-                {workflows.map(w => (
-                  <div key={w.id} className="wf-list-item">
-                    <div className="wf-list-info">
-                      <span className="wf-list-name">{w.name}</span>
-                      <span className="wf-list-meta">
-                        {w.steps.length} step{w.steps.length !== 1 ? 's' : ''}
-                        {w.params.length > 0 ? ` · ${w.params.length} param${w.params.length !== 1 ? 's' : ''}` : ''}
-                      </span>
-                    </div>
-                    <div className="wf-list-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing(w)}>Edit</button>
-                      <button
-                        className="btn-icon btn-icon--danger"
-                        onClick={() => setDeletingId(w.id)}
-                        title="Delete workflow"
-                      >×</button>
-                    </div>
+        <div className="workflow-panel-body">
+          {workflows.length === 0 ? (
+            <div className="wf-list-empty">
+              <p>No workflows yet. Create one to automate browser actions.</p>
+            </div>
+          ) : (
+            <div className="wf-list">
+              {workflows.map(w => (
+                <div key={w.id} className="wf-list-item">
+                  <div className="wf-list-info">
+                    <span className="wf-list-name">{w.name}</span>
+                    <span className="wf-list-meta">
+                      {w.steps.length} step{w.steps.length !== 1 ? 's' : ''}
+                      {w.params.length > 0 ? ` · ${w.params.length} param${w.params.length !== 1 ? 's' : ''}` : ''}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <div className="wf-list-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditing(w)}>Edit</button>
+                    <button
+                      className="btn-icon btn-icon--danger"
+                      onClick={() => setDeletingId(w.id)}
+                      title="Delete workflow"
+                    >×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-          <div className="modal-footer">
-            <button className="btn btn-ghost" onClick={onClose}>Close</button>
-            <button className="btn btn-primary" onClick={handleNew}>+ New Workflow</button>
-          </div>
+        <div className="workflow-panel-footer">
+          <button className="btn btn-primary" onClick={handleNew}>+ New Workflow</button>
         </div>
       </div>
 

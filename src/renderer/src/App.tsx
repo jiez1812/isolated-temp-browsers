@@ -9,6 +9,8 @@ import ToastContainer, { type ToastItem } from './components/Toast'
 import WindowControls from './components/WindowControls'
 import DebugConsole from './components/DebugConsole'
 
+type Tab = 'browsers' | 'workflows'
+
 function App(): React.JSX.Element {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null)
@@ -19,7 +21,7 @@ function App(): React.JSX.Element {
   const [debugLogs, setDebugLogs] = useState<DebugLogEvent[]>([])
   const [showAddContext, setShowAddContext] = useState(false)
   const [editingContext, setEditingContext] = useState<ContextBrowserConfig | null>(null)
-  const [showWorkflowManager, setShowWorkflowManager] = useState(false)
+  const [activeTab, setActiveTab] = useState<Tab>('browsers')
 
   const addToast = useCallback((type: ToastItem['type'], message: string) => {
     const id = crypto.randomUUID()
@@ -65,11 +67,14 @@ function App(): React.JSX.Element {
         .map(id => allContexts.find(c => c.id === id))
         .filter((c): c is ContextBrowserConfig => c != null)
     : []
+  const activeWorkflows = activeProfile
+    ? workflows.filter(w => (activeProfile.workflowIds ?? []).includes(w.id))
+    : []
 
   // ── Profile handlers ────────────────────────────────────────────────────────
 
   const handleCreateProfile = async (name: string) => {
-    const profile: Profile = { id: crypto.randomUUID(), name, contextIds: [] }
+    const profile: Profile = { id: crypto.randomUUID(), name, contextIds: [], workflowIds: [] }
     await window.api.saveProfile(profile)
     await loadProfiles()
     setActiveProfileId(profile.id)
@@ -188,11 +193,27 @@ function App(): React.JSX.Element {
 
   const handleSaveWorkflow = async (workflow: Workflow) => {
     await window.api.saveWorkflow(workflow)
+    if (activeProfile && !(activeProfile.workflowIds ?? []).includes(workflow.id)) {
+      const updated: Profile = {
+        ...activeProfile,
+        workflowIds: [...(activeProfile.workflowIds ?? []), workflow.id]
+      }
+      await window.api.saveProfile(updated)
+      await loadProfiles()
+    }
     await loadWorkflows()
   }
 
   const handleDeleteWorkflow = async (id: string) => {
     await window.api.deleteWorkflow(id)
+    if (activeProfile) {
+      const updated: Profile = {
+        ...activeProfile,
+        workflowIds: (activeProfile.workflowIds ?? []).filter(wid => wid !== id)
+      }
+      await window.api.saveProfile(updated)
+      await loadProfiles()
+    }
     await loadWorkflows()
   }
 
@@ -207,21 +228,35 @@ function App(): React.JSX.Element {
           onCreate={handleCreateProfile}
           onDelete={handleDeleteProfile}
         />
-        <button className="btn btn-ghost btn-sm header-workflows-btn" onClick={() => setShowWorkflowManager(true)}>
-          Workflows
-        </button>
         <WindowControls />
       </header>
+
+      {activeProfileId && (
+        <nav className="tab-bar">
+          <button
+            className={`tab-btn${activeTab === 'browsers' ? ' tab-btn--active' : ''}`}
+            onClick={() => setActiveTab('browsers')}
+          >
+            Browsers
+          </button>
+          <button
+            className={`tab-btn${activeTab === 'workflows' ? ' tab-btn--active' : ''}`}
+            onClick={() => setActiveTab('workflows')}
+          >
+            Workflows
+          </button>
+        </nav>
+      )}
 
       <main className="app-main">
         {!activeProfileId ? (
           <div className="empty-state">
             <p>Select or create a profile to get started.</p>
           </div>
-        ) : (
+        ) : activeTab === 'browsers' ? (
           <ContextList
             contexts={activeContexts}
-            workflows={workflows}
+            workflows={activeWorkflows}
             runningContextIds={runningContextIds}
             onLaunch={handleLaunch}
             onClose={handleClose}
@@ -236,12 +271,18 @@ function App(): React.JSX.Element {
             onLaunchAll={handleLaunchAll}
             onCloseAll={handleCloseAll}
           />
+        ) : (
+          <WorkflowManagerModal
+            workflows={activeWorkflows}
+            onSave={handleSaveWorkflow}
+            onDelete={handleDeleteWorkflow}
+          />
         )}
       </main>
 
       {showAddContext && (
         <AddContextModal
-          workflows={workflows}
+          workflows={activeWorkflows}
           onSave={handleSaveContext}
           onCancel={() => setShowAddContext(false)}
         />
@@ -249,19 +290,10 @@ function App(): React.JSX.Element {
 
       {editingContext && (
         <AddContextModal
-          workflows={workflows}
+          workflows={activeWorkflows}
           initialConfig={editingContext}
           onSave={handleSaveEdit}
           onCancel={() => setEditingContext(null)}
-        />
-      )}
-
-      {showWorkflowManager && (
-        <WorkflowManagerModal
-          workflows={workflows}
-          onSave={handleSaveWorkflow}
-          onDelete={handleDeleteWorkflow}
-          onClose={() => setShowWorkflowManager(false)}
         />
       )}
 
