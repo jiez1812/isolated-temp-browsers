@@ -51,7 +51,9 @@ export function registerContextHandlers(ipcMain: IpcMain): void {
           event.sender.send(IPC.WORKFLOW_STATUS, { ...statusEvent, contextId: id })
 
         workflowExecutor
-          .run(workflow, context, config.workflowParams ?? {}, sendStatus, id)
+          .run(workflow, context, config.workflowParams ?? {}, sendStatus, id,
+            (level, msg) => dbg(event.sender, level, msg)
+          )
           .catch(err => {
             const msg = err instanceof Error ? err.message : String(err)
             dbg(event.sender, 'error', `[autorun] uncaught error: ${msg}`)

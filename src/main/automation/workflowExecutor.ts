@@ -1,8 +1,9 @@
 import type { BrowserContext } from 'playwright'
 import type { Workflow, WorkflowStep } from '../../shared/types'
-import type { WorkflowStatusEvent } from '../../shared/ipc'
+import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
 
 type StatusCallback = (event: WorkflowStatusEvent) => void
+type DebugLogFn = (level: DebugLogEvent['level'], message: string) => void
 
 class WorkflowExecutor {
   async run(
@@ -10,7 +11,8 @@ class WorkflowExecutor {
     context: BrowserContext,
     params: Record<string, string>,
     onStatus: StatusCallback,
-    contextId = ''
+    contextId = '',
+    onDebugLog?: DebugLogFn
   ): Promise<void> {
     let page: import('playwright').Page
     try {
@@ -33,19 +35,44 @@ class WorkflowExecutor {
     onStatus({ contextId, workflowId: workflow.id, status: 'running', timestamp: Date.now() })
 
     try {
-      for (const step of workflow.steps) {
+      const total = workflow.steps.length
+      for (let i = 0; i < total; i++) {
+        const step = workflow.steps[i]
+        const prefix = `[step ${i + 1}/${total}]`
+        onDebugLog?.('info', `${prefix} ${this.buildStepLabel(step, params)}`)
+        const t0 = Date.now()
         await this.executeStep(page, step, params)
+        onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
       }
       onStatus({ contextId, workflowId: workflow.id, status: 'success', timestamp: Date.now() })
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      onDebugLog?.('error', `step failed: ${msg}`)
       onStatus({
         contextId,
         workflowId: workflow.id,
         status: 'error',
-        message: err instanceof Error ? err.message : String(err),
+        message: msg,
         timestamp: Date.now()
       })
       throw err
+    }
+  }
+
+  private buildStepLabel(step: WorkflowStep, params: Record<string, string>): string {
+    const resolve = (val?: string): string => {
+      if (!val) return ''
+      return val.replace(/\{\{(\w+)\}\}/g, (_, key) =>
+        /password|secret|token/i.test(key) ? '••••••' : (params[key] ?? '')
+      )
+    }
+    switch (step.type) {
+      case 'goto':   return `goto  ${resolve(step.url)}`
+      case 'fill':   return `fill  ${step.selector}  →  "${resolve(step.value)}"`
+      case 'click':  return `click  ${step.selector}`
+      case 'wait':   return `wait  ${step.selector}  (${step.timeout ?? 10000}ms)`
+      case 'assert': return `assert  ${step.selector}  visible`
+      default:       return JSON.stringify(step)
     }
   }
 

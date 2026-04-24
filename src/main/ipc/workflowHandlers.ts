@@ -1,7 +1,7 @@
 import type { IpcMain, WebContents } from 'electron'
 import { IPC } from '../../shared/ipc'
 import type { Workflow } from '../../shared/types'
-import type { WorkflowStatusEvent } from '../../shared/ipc'
+import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
 import { workflowStore } from '../store/workflowStore'
 import { workflowExecutor } from '../automation/workflowExecutor'
 import { browserManager } from '../browser/browserManager'
@@ -30,7 +30,12 @@ export function registerWorkflowHandlers(ipcMain: IpcMain): void {
         ;(event.sender as WebContents).send(IPC.WORKFLOW_STATUS, status)
       }
 
-      await workflowExecutor.run(workflow, context, params, sendStatus, contextId)
+      const sender = event.sender as WebContents
+      await workflowExecutor.run(workflow, context, params, sendStatus, contextId,
+        (level, msg) => sender.send(IPC.DEBUG_LOG, {
+          level, message: msg, timestamp: Date.now()
+        } satisfies DebugLogEvent)
+      )
     }
   )
 }

@@ -52,7 +52,7 @@ function App(): React.JSX.Element {
       const detail = event.message ? `: ${event.message}` : ''
       addToast(type, `[${event.contextId}] ${event.status}${detail}`)
     })
-    const unsubDebug = window.api.onDebugLog(entry => setDebugLogs(prev => [...prev, entry]))
+    const unsubDebug = window.api.onDebugLog(entry => setDebugLogs(prev => [...prev.slice(-499), entry]))
     return () => { unsubStatus(); unsubDebug() }
   }, [loadProfiles, loadContexts, loadWorkflows, addToast])
 
