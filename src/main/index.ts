@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { registerContextHandlers } from './ipc/contextHandlers'
 import { registerProfileHandlers } from './ipc/profileHandlers'
@@ -25,6 +25,8 @@ function createWindow(): BrowserWindow {
 
   return win
 }
+
+Menu.setApplicationMenu(null)
 
 app.whenReady().then(() => {
   registerContextHandlers(ipcMain)

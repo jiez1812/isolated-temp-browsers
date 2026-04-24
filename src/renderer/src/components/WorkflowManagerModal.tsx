@@ -17,9 +17,13 @@ export default function WorkflowManagerModal({ workflows, onSave, onDelete, onCl
     setEditing({ id: crypto.randomUUID(), name: '', steps: [], params: [] })
 
   if (editing) {
+    const existingNames = workflows
+      .filter(w => w.id !== editing.id)
+      .map(w => w.name)
     return (
       <WorkflowEditor
         workflow={editing}
+        existingNames={existingNames}
         onSave={w => { onSave(w); setEditing(null) }}
         onCancel={() => setEditing(null)}
       />
@@ -99,14 +103,17 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
 
 function WorkflowEditor({
   workflow,
+  existingNames,
   onSave,
   onCancel
 }: {
   workflow: Workflow
+  existingNames: string[]
   onSave: (w: Workflow) => void
   onCancel: () => void
 }) {
   const [name, setName] = useState(workflow.name)
+  const [nameError, setNameError] = useState('')
   const [steps, setSteps] = useState<WorkflowStep[]>(workflow.steps)
   const [params, setParams] = useState<WorkflowParam[]>(workflow.params)
 
@@ -121,8 +128,13 @@ function WorkflowEditor({
     setParams(prev => prev.map((p, idx) => idx === i ? { ...p, ...partial } : p))
 
   const handleSave = () => {
-    if (!name.trim()) return
-    onSave({ ...workflow, name: name.trim(), steps, params })
+    const trimmed = name.trim()
+    if (!trimmed) return
+    if (existingNames.includes(trimmed)) {
+      setNameError('A workflow with this name already exists')
+      return
+    }
+    onSave({ ...workflow, name: trimmed, steps, params })
   }
 
   const isNew = !workflow.name
@@ -140,11 +152,12 @@ function WorkflowEditor({
             <label className="form-label">Workflow Name</label>
             <input
               autoFocus
-              className="form-input"
+              className={`form-input${nameError ? ' form-input--error' : ''}`}
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => { setName(e.target.value); setNameError('') }}
               placeholder="e.g. Login Flow"
             />
+            {nameError && <span className="form-input-error">{nameError}</span>}
           </div>
 
           {/* Parameters */}
