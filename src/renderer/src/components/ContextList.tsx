@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import type { ContextBrowserConfig, Workflow } from '../../../shared/types'
 import { reorder } from '../utils/reorder'
 import ContextCard from './ContextCard'
@@ -31,16 +31,28 @@ export default function ContextList({
 
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [overId, setOverId] = useState<string | null>(null)
+  const [pendingIds, setPendingIds] = useState<string[] | null>(null)
+  const prevContextsRef = useRef(contexts)
+
+  useEffect(() => {
+    if (prevContextsRef.current !== contexts) {
+      prevContextsRef.current = contexts
+      setPendingIds(null)
+    }
+  }, [contexts])
 
   const displayedContexts = useMemo(() => {
-    if (!draggingId || !overId || draggingId === overId) return contexts
-    const ids = reorder(contexts.map(c => c.id), draggingId, overId)
-    return ids.map(id => contexts.find(c => c.id === id)!)
-  }, [contexts, draggingId, overId])
+    if (pendingIds) {
+      return pendingIds.map(id => contexts.find(c => c.id === id)).filter((c): c is ContextBrowserConfig => c != null)
+    }
+    return contexts
+  }, [contexts, pendingIds])
 
   const handleDrop = (targetId: string) => {
     if (draggingId && draggingId !== targetId) {
-      onReorder(reorder(contexts.map(c => c.id), draggingId, targetId))
+      const newIds = reorder(contexts.map(c => c.id), draggingId, targetId)
+      setPendingIds(newIds)
+      onReorder(newIds)
     }
     setDraggingId(null)
     setOverId(null)

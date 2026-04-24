@@ -26,6 +26,7 @@ declare global {
 
       onWorkflowStatus: (callback: (event: WorkflowStatusEvent) => void) => () => void
       onDebugLog: (callback: (event: DebugLogEvent) => void) => () => void
+      onContextClosed: (callback: (contextId: string) => void) => () => void
 
       minimizeWindow: () => void
       toggleAlwaysOnTop: () => Promise<boolean>

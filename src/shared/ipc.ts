@@ -16,6 +16,7 @@ export const IPC = {
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_TOGGLE_ALWAYS_ON_TOP: 'window:toggle-always-on-top',
   DEBUG_LOG: 'debug:log',
+  CONTEXT_CLOSED: 'context:closed',
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

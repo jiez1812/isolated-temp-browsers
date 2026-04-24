@@ -53,12 +53,17 @@ function App(): React.JSX.Element {
       addToast(type, `[${event.contextId}] ${event.status}${detail}`)
     })
     const unsubDebug = window.api.onDebugLog(entry => setDebugLogs(prev => [...prev.slice(-499), entry]))
-    return () => { unsubStatus(); unsubDebug() }
+    const unsubClosed = window.api.onContextClosed(contextId => {
+      setRunningContextIds(prev => { const s = new Set(prev); s.delete(contextId); return s })
+    })
+    return () => { unsubStatus(); unsubDebug(); unsubClosed() }
   }, [loadProfiles, loadContexts, loadWorkflows, addToast])
 
   const activeProfile = profiles.find(p => p.id === activeProfileId) ?? null
   const activeContexts = activeProfile
-    ? allContexts.filter(c => activeProfile.contextIds.includes(c.id))
+    ? activeProfile.contextIds
+        .map(id => allContexts.find(c => c.id === id))
+        .filter((c): c is ContextBrowserConfig => c != null)
     : []
 
   // ── Profile handlers ────────────────────────────────────────────────────────

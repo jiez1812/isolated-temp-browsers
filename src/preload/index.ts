@@ -45,5 +45,11 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_e: Electron.IpcRendererEvent, data: DebugLogEvent): void => callback(data)
     ipcRenderer.on(IPC.DEBUG_LOG, handler)
     return () => ipcRenderer.removeListener(IPC.DEBUG_LOG, handler)
+  },
+
+  onContextClosed: (callback: (contextId: string) => void): (() => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, id: string): void => callback(id)
+    ipcRenderer.on(IPC.CONTEXT_CLOSED, handler)
+    return () => ipcRenderer.removeListener(IPC.CONTEXT_CLOSED, handler)
   }
 })

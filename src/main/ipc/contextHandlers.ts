@@ -22,7 +22,7 @@ export function registerContextHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle(IPC.CONTEXT_LAUNCH, async (event, id: string) => {
     dbg(event.sender, 'info', `[launch] contextId=${id}`)
-    await browserManager.launch(id)
+    await browserManager.launch(id, event.sender)
     dbg(event.sender, 'info', `[launch] browser launched`)
 
     const config = contextStore.load(id)

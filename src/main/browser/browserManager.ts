@@ -1,6 +1,8 @@
 import { chromium } from 'playwright'
 import type { Browser, BrowserContext } from 'playwright'
+import type { WebContents } from 'electron'
 import { contextStore } from '../store/contextStore'
+import { IPC } from '../../shared/ipc'
 
 interface RunningContext {
   context: BrowserContext
@@ -19,7 +21,7 @@ class BrowserManager {
     return this.browser
   }
 
-  async launch(configId: string): Promise<void> {
+  async launch(configId: string, sender: WebContents): Promise<void> {
     if (this.running.has(configId)) return
 
     const config = contextStore.load(configId)
@@ -83,6 +85,14 @@ class BrowserManager {
 
     await page.goto(config.startupUrl)
     this.running.set(configId, { context, configId })
+
+    page.on('close', () => {
+      this.running.delete(configId)
+      if (!sender.isDestroyed()) {
+        sender.send(IPC.DEBUG_LOG, { level: 'info', message: `[browser] page closed — contextId=${configId}`, timestamp: Date.now() })
+        sender.send(IPC.CONTEXT_CLOSED, configId)
+      }
+    })
   }
 
   async close(configId: string): Promise<void> {
