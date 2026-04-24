@@ -36,10 +36,13 @@ class WorkflowExecutor {
 
     try {
       const total = workflow.steps.length
+      const maskedKeys = new Set(
+        workflow.params.filter(p => p.masked).map(p => p.name)
+      )
       for (let i = 0; i < total; i++) {
         const step = workflow.steps[i]
         const prefix = `[step ${i + 1}/${total}]`
-        onDebugLog?.('info', `${prefix} ${this.buildStepLabel(step, params)}`)
+        onDebugLog?.('info', `${prefix} ${this.buildStepLabel(step, params, maskedKeys)}`)
         const t0 = Date.now()
         await this.executeStep(page, step, params)
         onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
@@ -59,11 +62,11 @@ class WorkflowExecutor {
     }
   }
 
-  private buildStepLabel(step: WorkflowStep, params: Record<string, string>): string {
+  private buildStepLabel(step: WorkflowStep, params: Record<string, string>, maskedKeys: Set<string>): string {
     const resolve = (val?: string): string => {
       if (!val) return ''
       return val.replace(/\{\{(\w+)\}\}/g, (_, key) =>
-        /password|secret|token/i.test(key) ? '••••••' : (params[key] ?? '')
+        maskedKeys.has(key) ? '••••••' : (params[key] ?? '')
       )
     }
     switch (step.type) {

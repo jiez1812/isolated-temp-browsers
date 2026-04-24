@@ -125,6 +125,7 @@ export default function ContextCard({
                     <label className="param-label">{p.label}</label>
                     <input
                       className="param-input"
+                      type={p.masked ? 'password' : 'text'}
                       value={paramValues[p.name] ?? ''}
                       onChange={e => setParamValues(prev => ({ ...prev, [p.name]: e.target.value }))}
                       onBlur={() => onSaveParams(paramValues)}

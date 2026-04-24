@@ -10,6 +10,7 @@ export interface WorkflowParam {
   name: string
   label: string
   defaultValue?: string
+  masked?: boolean
 }
 
 export interface Workflow {

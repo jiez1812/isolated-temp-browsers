@@ -157,7 +157,7 @@ function WorkflowEditor({
               <p className="wf-hint">Parameters let you customize values at runtime using {'{{name}}'} in step fields.</p>
             ) : (
               <div className="wf-param-header">
-                <span>Key name</span><span>Display label</span><span>Default value</span>
+                <span>Key name</span><span>Display label</span><span>Default value</span><span>Mask</span>
               </div>
             )}
             {params.map((p, i) => (
@@ -179,6 +179,14 @@ function WorkflowEditor({
                   value={p.defaultValue ?? ''}
                   onChange={e => updateParam(i, { defaultValue: e.target.value })}
                   placeholder="(optional)"
+                />
+                <button
+                  type="button"
+                  className={`toggle-switch wf-param-mask-toggle${p.masked ? ' toggle-switch--on' : ''}`}
+                  onClick={() => updateParam(i, { masked: !p.masked })}
+                  role="switch"
+                  aria-checked={p.masked ?? false}
+                  title={p.masked ? 'Masked — input hidden in UI and debug log' : 'Not masked'}
                 />
                 <button className="btn-icon btn-icon--danger" onClick={() => removeParam(i)}>×</button>
               </div>
