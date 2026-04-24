@@ -15,6 +15,8 @@ export const IPC = {
   WORKFLOW_DELETE: 'workflow:delete',
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_TOGGLE_ALWAYS_ON_TOP: 'window:toggle-always-on-top',
+  WINDOW_ENTER_MINI: 'window:enter-mini',
+  WINDOW_EXIT_MINI: 'window:exit-mini',
   DEBUG_LOG: 'debug:log',
   CONTEXT_CLOSED: 'context:closed',
 } as const

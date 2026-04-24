@@ -30,6 +30,8 @@ declare global {
 
       minimizeWindow: () => void
       toggleAlwaysOnTop: () => Promise<boolean>
+      enterMiniMode: () => void
+      exitMiniMode: () => void
     }
   }
 }

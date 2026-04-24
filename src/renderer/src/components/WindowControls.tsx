@@ -1,6 +1,10 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
-export default function WindowControls() {
+interface Props {
+  onMini: () => void
+}
+
+export default function WindowControls({ onMini }: Props) {
   const [pinned, setPinned] = useState(false)
 
   const handleTogglePin = async () => {
@@ -19,10 +23,10 @@ export default function WindowControls() {
       </button>
       <button
         className="btn-window"
-        onClick={() => window.api.minimizeWindow()}
-        title="Minimize"
+        onClick={onMini}
+        title="Mini mode"
       >
-        &#x2212;
+        &#x2B1C;
       </button>
     </div>
   )

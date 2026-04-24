@@ -8,6 +8,7 @@ import WorkflowManagerModal from './components/WorkflowManagerModal'
 import ToastContainer, { type ToastItem } from './components/Toast'
 import WindowControls from './components/WindowControls'
 import DebugConsole from './components/DebugConsole'
+import MiniView from './MiniApp'
 
 type Tab = 'browsers' | 'workflows'
 
@@ -22,6 +23,7 @@ function App(): React.JSX.Element {
   const [showAddContext, setShowAddContext] = useState(false)
   const [editingContext, setEditingContext] = useState<ContextBrowserConfig | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('browsers')
+  const [isMini, setIsMini] = useState(false)
 
   const addToast = useCallback((type: ToastItem['type'], message: string) => {
     const id = crypto.randomUUID()
@@ -217,6 +219,31 @@ function App(): React.JSX.Element {
     await loadWorkflows()
   }
 
+  const handleEnterMini = () => {
+    setIsMini(true)
+    window.api.enterMiniMode()
+  }
+
+  const handleExitMini = () => {
+    setIsMini(false)
+    window.api.exitMiniMode()
+  }
+
+  if (isMini) {
+    return (
+      <MiniView
+        profiles={profiles}
+        activeProfileId={activeProfileId}
+        onSelectProfile={setActiveProfileId}
+        activeContexts={activeContexts}
+        runningContextIds={runningContextIds}
+        onToggle={ctx => runningContextIds.has(ctx.id) ? handleClose(ctx.id) : handleLaunch(ctx.id)}
+        onLaunchAll={handleLaunchAll}
+        onRestore={handleExitMini}
+      />
+    )
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -228,7 +255,7 @@ function App(): React.JSX.Element {
           onCreate={handleCreateProfile}
           onDelete={handleDeleteProfile}
         />
-        <WindowControls />
+        <WindowControls onMini={handleEnterMini} />
       </header>
 
       {activeProfileId && (

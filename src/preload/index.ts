@@ -32,6 +32,8 @@ contextBridge.exposeInMainWorld('api', {
   // Window controls
   minimizeWindow: (): void => ipcRenderer.send(IPC.WINDOW_MINIMIZE),
   toggleAlwaysOnTop: (): Promise<boolean> => ipcRenderer.invoke(IPC.WINDOW_TOGGLE_ALWAYS_ON_TOP),
+  enterMiniMode: (): void => ipcRenderer.send(IPC.WINDOW_ENTER_MINI),
+  exitMiniMode: (): void => ipcRenderer.send(IPC.WINDOW_EXIT_MINI),
 
   // Events
   onWorkflowStatus: (callback: (event: WorkflowStatusEvent) => void): (() => void) => {
