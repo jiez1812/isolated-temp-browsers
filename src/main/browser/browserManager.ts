@@ -1,0 +1,111 @@
+import { chromium } from 'playwright'
+import type { Browser, BrowserContext } from 'playwright'
+import { contextStore } from '../store/contextStore'
+
+interface RunningContext {
+  context: BrowserContext
+  configId: string
+}
+
+class BrowserManager {
+  private browser: Browser | null = null
+  private running = new Map<string, RunningContext>()
+  private nextWindowIndex = 0
+
+  private async ensureBrowser(): Promise<Browser> {
+    if (!this.browser || !this.browser.isConnected()) {
+      this.browser = await chromium.launch({ headless: false })
+    }
+    return this.browser
+  }
+
+  async launch(configId: string): Promise<void> {
+    if (this.running.has(configId)) return
+
+    const config = contextStore.load(configId)
+    if (!config) throw new Error(`Context config ${configId} not found`)
+
+    // Grab index before any await so concurrent launches each get a unique slot
+    const windowIndex = this.nextWindowIndex++
+    const cascadeOffset = (windowIndex % 8) * 50
+
+    const browser = await this.ensureBrowser()
+    const context = await browser.newContext({ viewport: config.windowSize })
+
+    const labelName = config.name
+    const labelColor = config.color ?? '#5b5bf0'
+    await context.addInitScript(`
+      (function () {
+        var name = ${JSON.stringify(labelName)};
+        var color = ${JSON.stringify(labelColor)};
+        function inject() {
+          if (document.getElementById('__ctx-label__')) return;
+          var el = document.createElement('div');
+          el.id = '__ctx-label__';
+          el.style.cssText =
+            'position:fixed;top:0;left:0;z-index:2147483647;' +
+            'background:' + color + ';color:#fff;' +
+            'font:600 11px/1 system-ui,sans-serif;' +
+            'padding:3px 10px 4px;border-radius:0 0 8px 0;' +
+            'pointer-events:none;opacity:0.88;letter-spacing:0.3px;' +
+            'box-shadow:0 2px 6px rgba(0,0,0,0.4)';
+          el.textContent = name;
+          document.documentElement.appendChild(el);
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', inject);
+        } else {
+          inject();
+        }
+      })();
+    `)
+
+    const page = await context.newPage()
+    await page.setViewportSize(config.windowSize)
+
+    // Position window so concurrent launches don't stack on the same spot
+    try {
+      const session = await context.newCDPSession(page)
+      const { windowId } = await session.send('Browser.getWindowForTarget', {})
+      await session.send('Browser.setWindowBounds', {
+        windowId,
+        bounds: {
+          left: 40 + cascadeOffset,
+          top: 40 + cascadeOffset,
+          width: config.windowSize.width,
+          height: config.windowSize.height
+        }
+      })
+      await session.detach()
+    } catch {
+      // Window positioning is best-effort; ignore CDP errors
+    }
+
+    await page.goto(config.startupUrl)
+    this.running.set(configId, { context, configId })
+  }
+
+  async close(configId: string): Promise<void> {
+    const entry = this.running.get(configId)
+    if (!entry) return
+    await entry.context.close()
+    this.running.delete(configId)
+  }
+
+  getContext(configId: string): BrowserContext | null {
+    return this.running.get(configId)?.context ?? null
+  }
+
+  async closeAll(): Promise<void> {
+    for (const [id] of this.running) {
+      await this.close(id)
+    }
+    if (this.browser) {
+      await this.browser.close()
+      this.browser = null
+    }
+    this.nextWindowIndex = 0
+  }
+}
+
+export const browserManager = new BrowserManager()

@@ -1,0 +1,9 @@
+node_modules/
+out/
+dist/
+.env
+*.log
+.claude/
+.vscode/
+out/
+CLAUDE.md
