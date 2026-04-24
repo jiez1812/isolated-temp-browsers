@@ -567,13 +567,13 @@ body {
 }
 
 .btn-window--active {
-  color: #7070e0;
-  background: #1a1a30;
+  color: #22c55e;
+  background: #0f2a1a;
 }
 
 .btn-window--active:hover {
-  color: #9090f0;
-  background: #22223a;
+  color: #4ade80;
+  background: #163d26;
 }
 
 /* ── Toast notifications ── */

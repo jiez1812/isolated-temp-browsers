@@ -15,7 +15,7 @@ export default function WindowControls() {
         onClick={handleTogglePin}
         title={pinned ? 'Unpin window' : 'Always on top'}
       >
-        &#x1F4CC;
+        Always on Top
       </button>
       <button
         className="btn-window"
