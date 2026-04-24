@@ -37,10 +37,10 @@ export function registerContextHandlers(ipcMain: IpcMain): void {
     )
 
     if (config.runWorkflowOnLaunch && config.workflowId) {
-      dbg(event.sender, 'info', `[autorun] condition met, loading workflow=${config.workflowId}`)
+      dbg(event.sender, 'info', `[autorun] condition met, loading workflow id=${config.workflowId}`)
 
       const workflow = workflowStore.load(config.workflowId)
-      dbg(event.sender, workflow ? 'info' : 'error', `[autorun] workflow ${workflow ? 'found' : 'NOT FOUND (id=' + config.workflowId + ')'}`)
+      dbg(event.sender, workflow ? 'info' : 'error', `[autorun] workflow ${workflow ? `"${workflow.name}" found` : 'NOT FOUND (id=' + config.workflowId + ')'}`)
 
       const context = browserManager.getContext(id)
       dbg(event.sender, context ? 'info' : 'error', `[autorun] browserContext ${context ? 'found' : 'NOT FOUND'}`)
@@ -57,7 +57,7 @@ export function registerContextHandlers(ipcMain: IpcMain): void {
           .catch(err => {
             const msg = err instanceof Error ? err.message : String(err)
             dbg(event.sender, 'error', `[autorun] uncaught error: ${msg}`)
-            console.error(`[auto-run] context=${id} workflow=${config.workflowId}:`, err)
+            console.error(`[auto-run] context=${id} workflow="${workflow?.name ?? config.workflowId}":`, err)
           })
       }
     } else {

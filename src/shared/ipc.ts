@@ -24,6 +24,7 @@ export type IpcChannel = (typeof IPC)[keyof typeof IPC]
 export interface WorkflowStatusEvent {
   contextId: string
   workflowId: string
+  workflowName: string
   status: 'running' | 'success' | 'error'
   message?: string
   timestamp: number

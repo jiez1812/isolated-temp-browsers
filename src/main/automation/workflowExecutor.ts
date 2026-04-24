@@ -25,6 +25,7 @@ class WorkflowExecutor {
       onStatus({
         contextId,
         workflowId: workflow.id,
+        workflowName: workflow.name,
         status: 'error',
         message: `Page setup failed: ${err instanceof Error ? err.message : String(err)}`,
         timestamp: Date.now()
@@ -32,7 +33,7 @@ class WorkflowExecutor {
       throw err
     }
 
-    onStatus({ contextId, workflowId: workflow.id, status: 'running', timestamp: Date.now() })
+    onStatus({ contextId, workflowId: workflow.id, workflowName: workflow.name, status: 'running', timestamp: Date.now() })
 
     try {
       const total = workflow.steps.length
@@ -47,13 +48,14 @@ class WorkflowExecutor {
         await this.executeStep(page, step, params)
         onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
       }
-      onStatus({ contextId, workflowId: workflow.id, status: 'success', timestamp: Date.now() })
+      onStatus({ contextId, workflowId: workflow.id, workflowName: workflow.name, status: 'success', timestamp: Date.now() })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       onDebugLog?.('error', `step failed: ${msg}`)
       onStatus({
         contextId,
         workflowId: workflow.id,
+        workflowName: workflow.name,
         status: 'error',
         message: msg,
         timestamp: Date.now()

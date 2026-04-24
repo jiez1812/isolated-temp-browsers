@@ -50,7 +50,7 @@ function App(): React.JSX.Element {
     const unsubStatus = window.api.onWorkflowStatus(event => {
       const type = event.status === 'success' ? 'success' : event.status === 'error' ? 'error' : 'info'
       const detail = event.message ? `: ${event.message}` : ''
-      addToast(type, `[${event.contextId}] ${event.status}${detail}`)
+      addToast(type, `[${event.workflowName}] ${event.status}${detail}`)
     })
     const unsubDebug = window.api.onDebugLog(entry => setDebugLogs(prev => [...prev.slice(-499), entry]))
     const unsubClosed = window.api.onContextClosed(contextId => {
