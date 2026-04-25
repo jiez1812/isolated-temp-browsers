@@ -214,7 +214,12 @@ export default function ContextCard({
                     className="workflow-picker-select"
                     defaultValue=""
                     autoFocus
-                    onChange={e => { if (e.target.value) { setShowWorkflowPicker(false); } }}
+                    onChange={e => {
+                      if (e.target.value) {
+                        onSetWorkflow(e.target.value)
+                        setShowWorkflowPicker(false)
+                      }
+                    }}
                     onBlur={() => setShowWorkflowPicker(false)}
                     style={{ flex: 1, marginLeft: 8 }}
                   >
