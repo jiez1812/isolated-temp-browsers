@@ -12,6 +12,7 @@ interface RunningContext {
 class BrowserManager {
   private browser: Browser | null = null
   private running = new Map<string, RunningContext>()
+  private launching = new Set<string>()
   private nextWindowIndex = 0
 
   private async ensureBrowser(): Promise<Browser> {
@@ -22,8 +23,9 @@ class BrowserManager {
   }
 
   async launch(configId: string, sender: WebContents): Promise<void> {
-    if (this.running.has(configId)) return
-
+    if (this.running.has(configId) || this.launching.has(configId)) return
+    this.launching.add(configId)
+    try {
     const config = contextStore.load(configId)
     if (!config) throw new Error(`Context config ${configId} not found`)
 
@@ -92,6 +94,9 @@ class BrowserManager {
         sender.send(IPC.CONTEXT_CLOSED, configId)
       }
     })
+    } finally {
+      this.launching.delete(configId)
+    }
   }
 
   async close(configId: string): Promise<void> {

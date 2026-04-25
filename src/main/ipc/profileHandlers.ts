@@ -2,6 +2,7 @@ import type { IpcMain } from 'electron'
 import { IPC } from '../../shared/ipc'
 import type { Profile } from '../../shared/types'
 import { profileStore } from '../store/profileStore'
+import { contextStore } from '../store/contextStore'
 
 export function registerProfileHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(IPC.PROFILE_LIST, () => profileStore.list())
@@ -10,5 +11,9 @@ export function registerProfileHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle(IPC.PROFILE_SAVE, (_e, profile: Profile) => profileStore.save(profile))
 
-  ipcMain.handle(IPC.PROFILE_DELETE, (_e, id: string) => profileStore.delete(id))
+  ipcMain.handle(IPC.PROFILE_DELETE, (_e, id: string) => {
+    const profile = profileStore.load(id)
+    profile?.contextIds.forEach(cid => contextStore.delete(cid))
+    profileStore.delete(id)
+  })
 }

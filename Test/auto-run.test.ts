@@ -50,7 +50,7 @@ describe('auto-run workflow on launch', () => {
     vi.mocked(browserManager.launch).mockResolvedValue(undefined)
     vi.mocked(contextStore.load).mockReturnValue(makeConfig({ workflowId: 'wf-1', runWorkflowOnLaunch: false }))
 
-    await handlers.get('context:launch')!(mockSender(), 'ctx-1')
+    await handlers.get('context:launch')!({ sender: mockSender() }, 'ctx-1')
 
     expect(workflowExecutor.run).not.toHaveBeenCalled()
   })
@@ -62,7 +62,7 @@ describe('auto-run workflow on launch', () => {
     vi.mocked(browserManager.launch).mockResolvedValue(undefined)
     vi.mocked(contextStore.load).mockReturnValue(makeConfig({ runWorkflowOnLaunch: true }))
 
-    await handlers.get('context:launch')!(mockSender(), 'ctx-1')
+    await handlers.get('context:launch')!({ sender: mockSender() }, 'ctx-1')
 
     expect(workflowExecutor.run).not.toHaveBeenCalled()
   })
@@ -76,7 +76,7 @@ describe('auto-run workflow on launch', () => {
     vi.mocked(workflowStore.load).mockReturnValue(null)
     vi.mocked(browserManager.getContext).mockReturnValue({} as any)
 
-    await handlers.get('context:launch')!(mockSender(), 'ctx-1')
+    await handlers.get('context:launch')!({ sender: mockSender() }, 'ctx-1')
 
     expect(workflowExecutor.run).not.toHaveBeenCalled()
   })
@@ -95,14 +95,10 @@ describe('auto-run workflow on launch', () => {
     vi.mocked(browserManager.getContext).mockReturnValue(fakeContext)
     vi.mocked(workflowExecutor.run).mockResolvedValue(undefined)
 
-    await handlers.get('context:launch')!(mockSender(), 'ctx-1')
+    await handlers.get('context:launch')!({ sender: mockSender() }, 'ctx-1')
 
     expect(workflowExecutor.run).toHaveBeenCalledWith(
-      workflow,
-      fakeContext,
-      { user: 'alice' },
-      expect.any(Function),
-      'ctx-1'
+      workflow, fakeContext, { user: 'alice' }, expect.any(Function), 'ctx-1', expect.any(Function)
     )
   })
 
@@ -149,6 +145,6 @@ describe('auto-run workflow on launch', () => {
     vi.mocked(workflowExecutor.run).mockRejectedValue(new Error('step failed'))
 
     // Should not throw — handler must resolve cleanly
-    await expect(handlers.get('context:launch')!(mockSender(), 'ctx-1')).resolves.toBeUndefined()
+    await expect(handlers.get('context:launch')!({ sender: mockSender() }, 'ctx-1')).resolves.toBeUndefined()
   })
 })

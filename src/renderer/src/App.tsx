@@ -73,6 +73,15 @@ function App(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '1') setActiveTab('browsers')
+      if (e.ctrlKey && e.key === '2') setActiveTab('workflows')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  useEffect(() => {
     loadProfiles()
     loadContexts()
     loadWorkflows()
