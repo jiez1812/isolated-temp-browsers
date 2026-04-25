@@ -41,6 +41,7 @@ app.whenReady().then(() => {
   })
 })
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  await browserManager.closeAll()
   app.quit()
 })
