@@ -17,9 +17,9 @@ interface Props {
   onDelete: () => void
 }
 
-function IconBolt() {
+function IconBolt({ className }: { className?: string }) {
   return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" className={className}>
       <path d="M9 1L3 9h4l-1 6 6-8H8l1-6z"/>
     </svg>
   )
