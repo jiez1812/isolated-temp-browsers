@@ -165,7 +165,7 @@ function WorkflowEditor({
               <p className="wf-hint">Parameters let you customize values at runtime using {'{{name}}'} in step fields.</p>
             ) : (
               <div className="wf-param-header">
-                <span>Key name</span><span>Display label</span><span>Default value</span><span>Mask</span>
+                <span>Key name</span><span>Display label</span><span>Default value</span><span>Mask</span><span/>
               </div>
             )}
             {params.map((p, i) => (

@@ -13,16 +13,11 @@ function formatTime(ts: number): string {
   const hh = d.getHours().toString().padStart(2, '0')
   const mm = d.getMinutes().toString().padStart(2, '0')
   const ss = d.getSeconds().toString().padStart(2, '0')
-  const ms = d.getMilliseconds().toString().padStart(3, '0')
-  return `${hh}:${mm}:${ss}.${ms}`
-}
-
-function formatEntry(entry: DebugLogEvent): string {
-  return `${formatTime(entry.timestamp)} [${entry.level.toUpperCase()}] ${entry.message}`
+  return `${hh}:${mm}:${ss}`
 }
 
 export default function DebugConsole({ logs, onClear }: Props): React.JSX.Element {
-  const [collapsed, setCollapsed] = useState(false)
+  const [open, setOpen] = useState(true)
   const [filterLevel, setFilterLevel] = useState<LevelFilter>('all')
   const [filterText, setFilterText] = useState('')
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -32,100 +27,77 @@ export default function DebugConsole({ logs, onClear }: Props): React.JSX.Elemen
     (!filterText || e.message.toLowerCase().includes(filterText.toLowerCase()))
   )
 
-  const isFiltered = filterLevel !== 'all' || filterText !== ''
-
   useEffect(() => {
-    if (!collapsed && bodyRef.current) {
+    if (open && bodyRef.current) {
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight
     }
-  }, [visibleLogs, collapsed])
+  }, [visibleLogs.length, open])
 
-  const handleCopy = () => {
-    const text = visibleLogs.map(formatEntry).join('\n')
-    navigator.clipboard.writeText(text)
-  }
-
-  const handleExport = () => {
-    const text = visibleLogs.map(formatEntry).join('\n')
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `debug-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const badgeLabel = isFiltered && logs.length > 0
-    ? `${visibleLogs.length}/${logs.length}`
-    : logs.length > 0 ? String(logs.length) : null
+  const badgeLabel = logs.length > 0 ? String(logs.length) : null
 
   return (
-    <div className="debug-console">
-      <div className="debug-console-header" onClick={() => setCollapsed(c => !c)}>
+    <div className="debug-console" style={{ height: open ? 160 : 30 }}>
+      {/* Header bar */}
+      <div className="debug-console-header" onClick={() => setOpen(o => !o)}>
         <span className="debug-console-title">
           Debug Console
           {badgeLabel && <span className="debug-console-badge">{badgeLabel}</span>}
         </span>
-        <span className="debug-console-actions" onClick={e => e.stopPropagation()}>
-          <button className="debug-console-clear" onClick={onClear} disabled={logs.length === 0}>
-            Clear
-          </button>
-          <button className="debug-console-copy" onClick={handleCopy} disabled={visibleLogs.length === 0} title="Copy visible entries">
-            Copy
-          </button>
-          <button className="debug-console-export" onClick={handleExport} disabled={visibleLogs.length === 0} title="Export as .txt">
-            Export
-          </button>
-          <span className="debug-console-chevron">{collapsed ? '▲' : '▼'}</span>
-        </span>
-      </div>
 
-      {!collapsed && (
-        <>
-          <div className="debug-filter-bar">
-            {(['all', 'info', 'warn', 'error'] as LevelFilter[]).map(l => (
-              <button
-                key={l}
-                className={`debug-filter-btn${filterLevel === l ? ' debug-filter-btn--active' : ''}`}
-                onClick={() => setFilterLevel(l)}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
+        {open && (
+          <>
+            <div className="debug-seg" onClick={e => e.stopPropagation()}>
+              {(['all', 'info', 'warn', 'error'] as LevelFilter[]).map(l => (
+                <button
+                  key={l}
+                  className={`debug-seg-btn${filterLevel === l ? ' active' : ''}`}
+                  onClick={() => setFilterLevel(l)}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
             <input
               className="debug-filter-text"
               placeholder="filter…"
               value={filterText}
               onChange={e => setFilterText(e.target.value)}
+              onClick={e => e.stopPropagation()}
             />
-            {isFiltered && (
-              <button
-                className="debug-filter-reset"
-                onClick={() => { setFilterLevel('all'); setFilterText('') }}
-                title="Clear filters"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          </>
+        )}
 
-          <div className="debug-console-body" ref={bodyRef}>
-            {visibleLogs.length === 0 ? (
-              <span className="debug-console-empty">
-                {logs.length === 0 ? 'No log entries yet.' : 'No entries match the current filter.'}
-              </span>
-            ) : (
-              visibleLogs.map((entry, i) => (
-                <div key={i} className={`debug-log-entry debug-log-entry--${entry.level}`}>
-                  <span className="debug-log-time">{formatTime(entry.timestamp)}</span>
-                  <span className="debug-log-level">{entry.level.toUpperCase()}</span>
-                  <span className="debug-log-message">{entry.message}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </>
+        <div className="debug-console-actions" onClick={e => e.stopPropagation()}>
+          {open && (
+            <button className="btn btn-ghost btn-sm" onClick={onClear} disabled={logs.length === 0}>
+              Clear
+            </button>
+          )}
+          <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setOpen(o => !o)} title={open ? 'Collapse' : 'Expand'}>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+              <path d="M4 6l4 4 4-4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Log body */}
+      {open && (
+        <div className="debug-console-body" ref={bodyRef}>
+          {visibleLogs.length === 0 ? (
+            <span className="debug-console-empty">
+              {logs.length === 0 ? 'No log entries yet.' : 'No entries match the current filter.'}
+            </span>
+          ) : (
+            visibleLogs.map((entry, i) => (
+              <div key={i} className={`debug-log-entry debug-log-entry--${entry.level}`}>
+                <span className="debug-log-time">{formatTime(entry.timestamp)}</span>
+                <span className="debug-log-level">{entry.level.toUpperCase()}</span>
+                <span className="debug-log-message">{entry.message}</span>
+              </div>
+            ))
+          )}
+        </div>
       )}
     </div>
   )

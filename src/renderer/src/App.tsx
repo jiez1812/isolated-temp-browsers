@@ -12,6 +12,32 @@ import MiniView from './MiniApp'
 
 type Tab = 'browsers' | 'workflows'
 
+// Tiny SVG icons (inline to avoid extra deps)
+function IconGrid() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+      <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
+    </svg>
+  )
+}
+function IconWand() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 13l7-7M9 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/>
+    </svg>
+  )
+}
+function IconLogo() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3.5" width="12" height="9" rx="1.5"/>
+      <path d="M2 6.5h12"/>
+      <circle cx="4.2" cy="5" r=".5" fill="white"/>
+    </svg>
+  )
+}
+
 function App(): React.JSX.Element {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null)
@@ -73,7 +99,7 @@ function App(): React.JSX.Element {
     ? workflows.filter(w => (activeProfile.workflowIds ?? []).includes(w.id))
     : []
 
-  // ── Profile handlers ────────────────────────────────────────────────────────
+  // ── Profile handlers ─────────────────────────────────────────────────────────
 
   const handleCreateProfile = async (name: string) => {
     const profile: Profile = { id: crypto.randomUUID(), name, contextIds: [], workflowIds: [] }
@@ -88,7 +114,7 @@ function App(): React.JSX.Element {
     if (activeProfileId === id) setActiveProfileId(null)
   }
 
-  // ── Browser launch/close handlers ───────────────────────────────────────────
+  // ── Browser launch/close handlers ────────────────────────────────────────────
 
   const handleLaunch = async (contextId: string) => {
     try {
@@ -118,7 +144,7 @@ function App(): React.JSX.Element {
     await Promise.allSettled(running.map(c => handleClose(c.id)))
   }
 
-  // ── Workflow execution ───────────────────────────────────────────────────────
+  // ── Workflow execution ────────────────────────────────────────────────────────
 
   const handleRunWorkflow = async (contextId: string, workflowId: string, params: Record<string, string>) => {
     try {
@@ -128,7 +154,7 @@ function App(): React.JSX.Element {
     }
   }
 
-  // ── Context CRUD ─────────────────────────────────────────────────────────────
+  // ── Context CRUD ──────────────────────────────────────────────────────────────
 
   const handleSaveContext = async (config: ContextBrowserConfig) => {
     await window.api.saveContext(config)
@@ -246,8 +272,13 @@ function App(): React.JSX.Element {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Context Browser Launcher</h1>
+      {/* V1 Titlebar */}
+      <div className="app-title">
+        <div className="app-logo"><IconLogo/></div>
+        <span className="app-brand">Context Browser Launcher</span>
+        <div className="app-title-div"/>
+        <span className="app-title-label">Profile</span>
+
         <ProfileSelector
           profiles={profiles}
           activeProfileId={activeProfileId}
@@ -255,27 +286,38 @@ function App(): React.JSX.Element {
           onCreate={handleCreateProfile}
           onDelete={handleDeleteProfile}
         />
-        <WindowControls onMini={handleEnterMini} />
-      </header>
 
+        <div className="app-title-spacer"/>
+
+        <WindowControls onMini={handleEnterMini}/>
+      </div>
+
+      {/* Tab bar */}
       {activeProfileId && (
-        <nav className="tab-bar">
+        <div className="app-tabs">
           <button
-            className={`tab-btn${activeTab === 'browsers' ? ' tab-btn--active' : ''}`}
+            className={`app-tab${activeTab === 'browsers' ? ' active' : ''}`}
             onClick={() => setActiveTab('browsers')}
           >
+            <IconGrid/>
             Browsers
+            <span className="app-tab-count">{activeContexts.length}</span>
+            <span className="app-kbd">Ctrl 1</span>
           </button>
           <button
-            className={`tab-btn${activeTab === 'workflows' ? ' tab-btn--active' : ''}`}
+            className={`app-tab${activeTab === 'workflows' ? ' active' : ''}`}
             onClick={() => setActiveTab('workflows')}
           >
+            <IconWand/>
             Workflows
+            <span className="app-tab-count">{activeWorkflows.length}</span>
+            <span className="app-kbd">Ctrl 2</span>
           </button>
-        </nav>
+        </div>
       )}
 
-      <main className="app-main">
+      {/* Body */}
+      <div className="app-body">
         {!activeProfileId ? (
           <div className="empty-state">
             <p>Select or create a profile to get started.</p>
@@ -305,7 +347,7 @@ function App(): React.JSX.Element {
             onDelete={handleDeleteWorkflow}
           />
         )}
-      </main>
+      </div>
 
       {showAddContext && (
         <AddContextModal
