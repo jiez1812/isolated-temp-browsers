@@ -7,13 +7,16 @@ import { IPC } from '../../shared/ipc'
 interface RunningContext {
   context: BrowserContext
   configId: string
+  windowIndex: number
 }
+
+const MAX_WINDOW_SLOTS = 8
 
 class BrowserManager {
   private browser: Browser | null = null
   private running = new Map<string, RunningContext>()
   private launching = new Set<string>()
-  private nextWindowIndex = 0
+  private freeSlots = new Set<number>(Array.from({ length: MAX_WINDOW_SLOTS }, (_, i) => i))
 
   private async ensureBrowser(): Promise<Browser> {
     if (!this.browser || !this.browser.isConnected()) {
@@ -29,9 +32,10 @@ class BrowserManager {
     const config = contextStore.load(configId)
     if (!config) throw new Error(`Context config ${configId} not found`)
 
-    // Grab index before any await so concurrent launches each get a unique slot
-    const windowIndex = this.nextWindowIndex++
-    const cascadeOffset = (windowIndex % 8) * 50
+    // Grab a slot before any await so concurrent launches each get a unique slot
+    const windowIndex = this.freeSlots.size > 0 ? Math.min(...this.freeSlots) : 0
+    this.freeSlots.delete(windowIndex)
+    const cascadeOffset = windowIndex * 50
 
     const browser = await this.ensureBrowser()
     const context = await browser.newContext({ viewport: null })
@@ -85,10 +89,11 @@ class BrowserManager {
     }
 
     await page.goto(config.startupUrl)
-    this.running.set(configId, { context, configId })
+    this.running.set(configId, { context, configId, windowIndex })
 
     page.on('close', () => {
       this.running.delete(configId)
+      this.freeSlots.add(windowIndex)
       if (!sender.isDestroyed()) {
         sender.send(IPC.DEBUG_LOG, { level: 'info', message: `[browser] page closed — contextId=${configId}`, timestamp: Date.now() })
         sender.send(IPC.CONTEXT_CLOSED, configId)
@@ -102,8 +107,9 @@ class BrowserManager {
   async close(configId: string): Promise<void> {
     const entry = this.running.get(configId)
     if (!entry) return
-    await entry.context.close()
     this.running.delete(configId)
+    this.freeSlots.add(entry.windowIndex)
+    await entry.context.close()
   }
 
   getContext(configId: string): BrowserContext | null {
@@ -118,7 +124,7 @@ class BrowserManager {
       await this.browser.close()
       this.browser = null
     }
-    this.nextWindowIndex = 0
+    this.freeSlots = new Set<number>(Array.from({ length: MAX_WINDOW_SLOTS }, (_, i) => i))
   }
 }
 

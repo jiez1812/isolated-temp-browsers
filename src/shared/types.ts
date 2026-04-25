@@ -40,5 +40,5 @@ export interface Profile {
   id: string
   name: string
   contextIds: string[]
-  workflowIds: string[]
+  workflowIds?: string[]
 }

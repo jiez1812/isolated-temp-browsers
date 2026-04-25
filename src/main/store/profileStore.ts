@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { join, basename } from 'path'
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, rmSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
+import { readdir, readFile } from 'fs/promises'
 import type { Profile } from '../../shared/types'
 
 const dir = (): string => {
@@ -16,10 +17,12 @@ const filePath = (id: string): string => {
 }
 
 export const profileStore = {
-  list(): Profile[] {
-    return readdirSync(dir())
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => JSON.parse(readFileSync(join(dir(), f), 'utf-8')) as Profile)
+  async list(): Promise<Profile[]> {
+    const d = dir()
+    const files = (await readdir(d)).filter((f) => f.endsWith('.json'))
+    return Promise.all(
+      files.map(async (f) => JSON.parse(await readFile(join(d, f), 'utf-8')) as Profile)
+    )
   },
 
   load(id: string): Profile | null {
