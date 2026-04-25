@@ -30,10 +30,12 @@ export default function AddContextModal({ workflows, initialConfig, onSave, onCa
     }
   }, [initialConfig?.id])
 
+  const isValidUrl = (u: string) => /^https?:\/\//i.test(u.trim())
+
   const handleSave = () => {
     const trimName = name.trim()
     const trimUrl = url.trim()
-    if (!trimName || !trimUrl) return
+    if (!trimName || !isValidUrl(trimUrl)) return
 
     onSave({
       id: initialConfig?.id ?? crypto.randomUUID(),
@@ -55,7 +57,7 @@ export default function AddContextModal({ workflows, initialConfig, onSave, onCa
     if (e.key === 'Escape') onCancel()
   }
 
-  const isValid = name.trim().length > 0 && url.trim().length > 0
+  const isValid = name.trim().length > 0 && isValidUrl(url)
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick} onKeyDown={handleKeyDown}>
