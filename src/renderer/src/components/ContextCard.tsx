@@ -45,10 +45,17 @@ function IconStop() {
     </svg>
   )
 }
+function IconEdit() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 2l3 3-8 8H3v-3l8-8z"/>
+    </svg>
+  )
+}
 
 export default function ContextCard({
   context, workflow, allWorkflows, isRunning,
-  onLaunch, onClose, onSetWorkflow, onToggleAutoRun, onRunWorkflow, onSaveParams, onDelete
+  onLaunch, onClose, onEdit, onSetWorkflow, onToggleAutoRun, onRunWorkflow, onSaveParams, onDelete
 }: Props) {
   const [paramValues, setParamValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -96,9 +103,18 @@ export default function ContextCard({
 
         {/* Name, URL, meta */}
         <div>
-          <div className="context-card-name">
-            <span className="context-card-name-dot"/>
-            {context.name}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div className="context-card-name">
+              <span className="context-card-name-dot"/>
+              {context.name}
+            </div>
+            <button
+              className="context-card-edit"
+              onClick={onEdit}
+              title="Edit browser"
+            >
+              <IconEdit/>
+            </button>
           </div>
           <div style={{ height: 8 }}/>
           <div className="context-url" title={context.startupUrl}>{context.startupUrl}</div>
