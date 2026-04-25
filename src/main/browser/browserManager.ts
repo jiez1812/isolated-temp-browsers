@@ -32,7 +32,7 @@ class BrowserManager {
     const cascadeOffset = (windowIndex % 8) * 50
 
     const browser = await this.ensureBrowser()
-    const context = await browser.newContext({ viewport: config.windowSize })
+    const context = await browser.newContext({ viewport: null })
 
     const labelName = config.name
     const labelColor = config.color ?? '#5b5bf0'
@@ -63,7 +63,6 @@ class BrowserManager {
     `)
 
     const page = await context.newPage()
-    await page.setViewportSize(config.windowSize)
 
     // Position window so concurrent launches don't stack on the same spot
     try {
