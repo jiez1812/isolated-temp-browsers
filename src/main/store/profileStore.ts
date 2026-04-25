@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { join } from 'path'
+import { join, basename } from 'path'
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, rmSync } from 'fs'
 import type { Profile } from '../../shared/types'
 
@@ -9,7 +9,11 @@ const dir = (): string => {
   return d
 }
 
-const filePath = (id: string): string => join(dir(), `${id}.json`)
+const filePath = (id: string): string => {
+  const safe = basename(id).replace(/[^a-zA-Z0-9_-]/g, '')
+  if (!safe) throw new Error(`Invalid id: ${id}`)
+  return join(dir(), `${safe}.json`)
+}
 
 export const profileStore = {
   list(): Profile[] {
