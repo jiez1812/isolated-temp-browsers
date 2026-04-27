@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react'
-import type { ContextBrowserConfig, Workflow } from '../../../shared/types'
+import type { ContextBrowserConfig, Workflow, BrowserType, AvailableBrowsers } from '../../../shared/types'
 
 interface Props {
   workflows: Workflow[]
+  availableBrowsers: AvailableBrowsers
   initialConfig?: ContextBrowserConfig
   onSave: (config: ContextBrowserConfig) => void
   onCancel: () => void
 }
 
+const BROWSER_OPTIONS: { type: BrowserType; label: string }[] = [
+  { type: 'edge', label: 'Edge' },
+  { type: 'chrome', label: 'Chrome' },
+  { type: 'firefox', label: 'Firefox' },
+]
+
 export const PALETTE = ['#e05c5c', '#e07c3c', '#d4b44a', '#5cc05c', '#3cb8b8', '#5b8af0', '#9b6be0', '#d45cb8']
 
-export default function AddContextModal({ workflows, initialConfig, onSave, onCancel }: Props) {
+export default function AddContextModal({ workflows, availableBrowsers, initialConfig, onSave, onCancel }: Props) {
   const isEdit = !!initialConfig
   const [name, setName] = useState(initialConfig?.name ?? '')
   const [url, setUrl] = useState(initialConfig?.startupUrl ?? 'https://')
@@ -18,6 +25,7 @@ export default function AddContextModal({ workflows, initialConfig, onSave, onCa
   const [height, setHeight] = useState(String(initialConfig?.windowSize.height ?? 800))
   const [workflowId, setWorkflowId] = useState(initialConfig?.workflowId ?? '')
   const [color, setColor] = useState(initialConfig?.color ?? PALETTE[0])
+  const [browserType, setBrowserType] = useState<BrowserType>(initialConfig?.browserType ?? 'edge')
 
   useEffect(() => {
     if (initialConfig) {
@@ -27,6 +35,7 @@ export default function AddContextModal({ workflows, initialConfig, onSave, onCa
       setHeight(String(initialConfig.windowSize.height))
       setWorkflowId(initialConfig.workflowId ?? '')
       setColor(initialConfig.color ?? PALETTE[0])
+      setBrowserType(initialConfig.browserType ?? 'edge')
     }
   }, [initialConfig?.id])
 
@@ -41,6 +50,7 @@ export default function AddContextModal({ workflows, initialConfig, onSave, onCa
       id: initialConfig?.id ?? crypto.randomUUID(),
       name: trimName,
       color,
+      browserType,
       startupUrl: trimUrl,
       windowSize: { width: parseInt(width) || 1280, height: parseInt(height) || 800 },
       workflowId: workflowId || undefined,
@@ -111,6 +121,27 @@ export default function AddContextModal({ workflows, initialConfig, onSave, onCa
                 value={height}
                 onChange={e => setHeight(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <label className="form-label">Browser</label>
+            <div className="browser-selector">
+              {BROWSER_OPTIONS.map(({ type, label }) => {
+                const available = availableBrowsers[type]
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`browser-option${browserType === type ? ' browser-option--selected' : ''}${!available ? ' browser-option--disabled' : ''}`}
+                    onClick={() => available && setBrowserType(type)}
+                    disabled={!available}
+                    title={available ? label : `${label} not installed`}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 

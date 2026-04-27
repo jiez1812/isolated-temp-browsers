@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
-import { browserManager } from './browser/browserManager'
+import { browserManager, detectBrowsers } from './browser/browserManager'
 import { registerContextHandlers } from './ipc/contextHandlers'
 import { registerProfileHandlers } from './ipc/profileHandlers'
 import { registerWorkflowHandlers } from './ipc/workflowHandlers'
 import { registerWindowHandlers } from './ipc/windowHandlers'
+import { IPC } from '../shared/ipc'
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -33,6 +34,7 @@ app.whenReady().then(() => {
   registerContextHandlers(ipcMain)
   registerProfileHandlers(ipcMain)
   registerWorkflowHandlers(ipcMain)
+  ipcMain.handle(IPC.BROWSER_DETECT, () => detectBrowsers())
 
   const win = createWindow()
   registerWindowHandlers(ipcMain, win)

@@ -25,10 +25,19 @@ export interface WindowSize {
   height: number
 }
 
+export type BrowserType = 'edge' | 'chrome' | 'firefox'
+
+export interface AvailableBrowsers {
+  edge: boolean
+  chrome: boolean
+  firefox: boolean
+}
+
 export interface ContextBrowserConfig {
   id: string
   name: string
   color?: string
+  browserType?: BrowserType
   startupUrl: string
   windowSize: WindowSize
   workflowId?: string

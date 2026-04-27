@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { ContextBrowserConfig, Profile, Workflow } from '../shared/types'
+import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent } from '../shared/ipc'
 
 contextBridge.exposeInMainWorld('api', {
@@ -28,6 +28,9 @@ contextBridge.exposeInMainWorld('api', {
     workflowId: string,
     params: Record<string, string>
   ): Promise<void> => ipcRenderer.invoke(IPC.WORKFLOW_RUN, { contextId, workflowId, params }),
+
+  // System
+  detectBrowsers: (): Promise<AvailableBrowsers> => ipcRenderer.invoke(IPC.BROWSER_DETECT),
 
   // Window controls
   minimizeWindow: (): void => ipcRenderer.send(IPC.WINDOW_MINIMIZE),

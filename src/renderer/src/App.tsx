@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import type { ContextBrowserConfig, Profile, Workflow } from '../../shared/types'
+import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../../shared/types'
 import type { DebugLogEvent } from '../../shared/ipc'
 import ProfileSelector from './components/ProfileSelector'
 import ContextList from './components/ContextList'
@@ -50,6 +50,7 @@ function App(): React.JSX.Element {
   const [editingContext, setEditingContext] = useState<ContextBrowserConfig | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('browsers')
   const [isMini, setIsMini] = useState(false)
+  const [availableBrowsers, setAvailableBrowsers] = useState<AvailableBrowsers>({ edge: true, chrome: false, firefox: false })
 
   const addToast = useCallback((type: ToastItem['type'], message: string) => {
     const id = crypto.randomUUID()
@@ -85,6 +86,7 @@ function App(): React.JSX.Element {
     loadProfiles()
     loadContexts()
     loadWorkflows()
+    window.api.detectBrowsers().then(setAvailableBrowsers)
 
     const unsubStatus = window.api.onWorkflowStatus(event => {
       const type = event.status === 'success' ? 'success' : event.status === 'error' ? 'error' : 'info'
@@ -361,6 +363,7 @@ function App(): React.JSX.Element {
       {showAddContext && (
         <AddContextModal
           workflows={activeWorkflows}
+          availableBrowsers={availableBrowsers}
           onSave={handleSaveContext}
           onCancel={() => setShowAddContext(false)}
         />
@@ -369,6 +372,7 @@ function App(): React.JSX.Element {
       {editingContext && (
         <AddContextModal
           workflows={activeWorkflows}
+          availableBrowsers={availableBrowsers}
           initialConfig={editingContext}
           onSave={handleSaveEdit}
           onCancel={() => setEditingContext(null)}

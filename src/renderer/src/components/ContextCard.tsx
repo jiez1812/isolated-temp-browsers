@@ -122,6 +122,8 @@ export default function ContextCard({
           <div className="context-meta">
             <span>{context.windowSize.width}×{context.windowSize.height}</span>
             <span>·</span>
+            <span>{context.browserType ?? 'edge'}</span>
+            <span>·</span>
             <span>isolated context</span>
           </div>
         </div>

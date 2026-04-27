@@ -19,6 +19,7 @@ export const IPC = {
   WINDOW_EXIT_MINI: 'window:exit-mini',
   DEBUG_LOG: 'debug:log',
   CONTEXT_CLOSED: 'context:closed',
+  BROWSER_DETECT: 'browser:detect',
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

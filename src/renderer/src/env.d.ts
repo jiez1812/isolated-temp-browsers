@@ -1,4 +1,4 @@
-import type { ContextBrowserConfig, Profile, Workflow } from '../../shared/types'
+import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
 
 declare global {
@@ -27,6 +27,8 @@ declare global {
       onWorkflowStatus: (callback: (event: WorkflowStatusEvent) => void) => () => void
       onDebugLog: (callback: (event: DebugLogEvent) => void) => () => void
       onContextClosed: (callback: (contextId: string) => void) => () => void
+
+      detectBrowsers: () => Promise<AvailableBrowsers>
 
       minimizeWindow: () => void
       toggleAlwaysOnTop: () => Promise<boolean>
