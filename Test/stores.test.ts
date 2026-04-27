@@ -22,6 +22,17 @@ vi.mock('fs', () => ({
   rmSync: (p: string) => { delete fsFiles[p] }
 }))
 
+vi.mock('fs/promises', () => ({
+  readdir: async (dir: string) =>
+    Object.keys(fsFiles)
+      .filter(p => p.startsWith(dir + '\\') || p.startsWith(dir + '/'))
+      .map(p => p.replace(/.*[/\\]/, '')),
+  readFile: async (p: string) => {
+    if (!Object.prototype.hasOwnProperty.call(fsFiles, p)) throw new Error(`ENOENT: ${p}`)
+    return fsFiles[p]
+  }
+}))
+
 // Mock electron's app.getPath so the stores can build their directory paths.
 vi.mock('electron', () => ({
   app: { getPath: (_name: string) => 'C:\\AppData' }
@@ -78,16 +89,16 @@ describe('contextStore', () => {
     expect(contextStore.load('nonexistent')).toBeNull()
   })
 
-  it('list returns all saved contexts', () => {
+  it('list returns all saved contexts', async () => {
     contextStore.save(makeContext({ id: 'ctx-1', name: 'A' }))
     contextStore.save(makeContext({ id: 'ctx-2', name: 'B' }))
-    const all = contextStore.list()
+    const all = await contextStore.list()
     expect(all).toHaveLength(2)
     expect(all.map(c => c.id).sort()).toEqual(['ctx-1', 'ctx-2'])
   })
 
-  it('list returns empty array when no contexts exist', () => {
-    expect(contextStore.list()).toEqual([])
+  it('list returns empty array when no contexts exist', async () => {
+    expect(await contextStore.list()).toEqual([])
   })
 
   it('delete removes the file', () => {
@@ -133,16 +144,16 @@ describe('profileStore', () => {
     expect(profileStore.load('nonexistent')).toBeNull()
   })
 
-  it('list returns all saved profiles', () => {
+  it('list returns all saved profiles', async () => {
     profileStore.save(makeProfile({ id: 'prof-1', name: 'A' }))
     profileStore.save(makeProfile({ id: 'prof-2', name: 'B' }))
-    const all = profileStore.list()
+    const all = await profileStore.list()
     expect(all).toHaveLength(2)
     expect(all.map(p => p.id).sort()).toEqual(['prof-1', 'prof-2'])
   })
 
-  it('list returns empty array when no profiles exist', () => {
-    expect(profileStore.list()).toEqual([])
+  it('list returns empty array when no profiles exist', async () => {
+    expect(await profileStore.list()).toEqual([])
   })
 
   it('delete removes the file', () => {
@@ -194,16 +205,16 @@ describe('workflowStore', () => {
     expect(workflowStore.load('nonexistent')).toBeNull()
   })
 
-  it('list returns all saved workflows', () => {
+  it('list returns all saved workflows', async () => {
     workflowStore.save(makeWorkflow({ id: 'wf-1', name: 'Login' }))
     workflowStore.save(makeWorkflow({ id: 'wf-2', name: 'Checkout' }))
-    const all = workflowStore.list()
+    const all = await workflowStore.list()
     expect(all).toHaveLength(2)
     expect(all.map(w => w.id).sort()).toEqual(['wf-1', 'wf-2'])
   })
 
-  it('list returns empty array when no workflows exist', () => {
-    expect(workflowStore.list()).toEqual([])
+  it('list returns empty array when no workflows exist', async () => {
+    expect(await workflowStore.list()).toEqual([])
   })
 
   it('delete removes the file', () => {
