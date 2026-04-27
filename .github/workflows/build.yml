@@ -19,14 +19,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Enable Corepack
-        run: corepack enable
-
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install
 
       - name: Build & package
-        run: pnpm dist:win
+        run: npm run dist:win
 
       - name: Zip installer
         shell: pwsh
