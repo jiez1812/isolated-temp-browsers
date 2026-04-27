@@ -36,6 +36,7 @@ export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
       <div className="workflow-panel">
         <div className="workflow-panel-header">
           <h2>Automation Workflows</h2>
+          <button className="btn btn-primary btn-sm" onClick={handleNew}>+ New Workflow</button>
         </div>
 
         <div className="workflow-panel-body">
@@ -68,9 +69,7 @@ export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
           )}
         </div>
 
-        <div className="workflow-panel-footer">
-          <button className="btn btn-primary" onClick={handleNew}>+ New Workflow</button>
-        </div>
+
       </div>
 
       {deletingId && deletingWorkflow && (
