@@ -101,10 +101,13 @@ describe('contextStore', () => {
     expect(() => contextStore.delete('ghost')).not.toThrow()
   })
 
-  it('rejects id with path traversal characters', () => {
-    expect(() => contextStore.load('../evil')).toThrow()
-    expect(() => contextStore.save(makeContext({ id: '../../etc/passwd' }))).toThrow()
-    expect(() => contextStore.delete('../etc/passwd')).toThrow()
+  it('sanitizes path traversal: strips prefix, throws only on all-special id', () => {
+    // '../evil' → basename → 'evil' → valid; reads non-existent file → null
+    expect(contextStore.load('../evil')).toBeNull()
+    // all-special id sanitizes to empty string → throws
+    expect(() => contextStore.load('@@@')).toThrow()
+    expect(() => contextStore.save(makeContext({ id: '@@@' }))).toThrow()
+    expect(() => contextStore.delete('@@@')).toThrow()
   })
 
   it('save overwrites an existing context', () => {
@@ -152,10 +155,11 @@ describe('profileStore', () => {
     expect(() => profileStore.delete('ghost')).not.toThrow()
   })
 
-  it('rejects id with path traversal characters', () => {
-    expect(() => profileStore.load('../evil')).toThrow()
-    expect(() => profileStore.save(makeProfile({ id: '../../etc/passwd' }))).toThrow()
-    expect(() => profileStore.delete('../etc/passwd')).toThrow()
+  it('sanitizes path traversal: strips prefix, throws only on all-special id', () => {
+    expect(profileStore.load('../evil')).toBeNull()
+    expect(() => profileStore.load('@@@')).toThrow()
+    expect(() => profileStore.save(makeProfile({ id: '@@@' }))).toThrow()
+    expect(() => profileStore.delete('@@@')).toThrow()
   })
 
   it('contextIds deduplication: saving twice does not double-store ids', () => {
@@ -212,10 +216,11 @@ describe('workflowStore', () => {
     expect(() => workflowStore.delete('ghost')).not.toThrow()
   })
 
-  it('rejects id with path traversal characters', () => {
-    expect(() => workflowStore.load('../evil')).toThrow()
-    expect(() => workflowStore.save(makeWorkflow({ id: '../../etc/passwd' }))).toThrow()
-    expect(() => workflowStore.delete('../etc/passwd')).toThrow()
+  it('sanitizes path traversal: strips prefix, throws only on all-special id', () => {
+    expect(workflowStore.load('../evil')).toBeNull()
+    expect(() => workflowStore.load('@@@')).toThrow()
+    expect(() => workflowStore.save(makeWorkflow({ id: '@@@' }))).toThrow()
+    expect(() => workflowStore.delete('@@@')).toThrow()
   })
 
   it('save overwrites an existing workflow', () => {
