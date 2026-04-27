@@ -19,20 +19,6 @@ function IconMini() {
     </svg>
   )
 }
-function IconMinimize() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-      <path d="M3 8h10"/>
-    </svg>
-  )
-}
-function IconClose() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M4 4l8 8M12 4l-8 8"/>
-    </svg>
-  )
-}
 
 export default function WindowControls({ onMini }: Props) {
   const [pinned, setPinned] = useState(false)
@@ -57,15 +43,6 @@ export default function WindowControls({ onMini }: Props) {
         <IconMini/> Mini
       </button>
 
-      <div className="app-title-div"/>
-
-      <button className="app-win-btn" onClick={() => window.api.minimizeWindow()} title="Minimize">
-        <IconMinimize/>
-      </button>
-
-      <button className="app-win-btn danger" onClick={() => window.close()} title="Close">
-        <IconClose/>
-      </button>
     </>
   )
 }
