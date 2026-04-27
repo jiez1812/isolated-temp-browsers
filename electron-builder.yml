@@ -10,6 +10,10 @@ files:
   - node_modules/**/*
   - package.json
 
+extraResources:
+  - from: images/
+    to: images/
+
 win:
   target:
     - target: nsis

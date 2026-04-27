@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 
-const APP_ICON = join(__dirname, '../../images/icon.ico')
+const APP_ICON = app.isPackaged
+  ? join(process.resourcesPath, 'images/icon.ico')
+  : join(__dirname, '../../images/icon.ico')
 import { browserManager, detectBrowsers } from './browser/browserManager'
 import { registerContextHandlers } from './ipc/contextHandlers'
 import { registerProfileHandlers } from './ipc/profileHandlers'
