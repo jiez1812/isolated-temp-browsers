@@ -4,7 +4,7 @@ import type { DebugLogEvent } from '../../shared/ipc'
 import ProfileSelector from './components/ProfileSelector'
 import ContextList from './components/ContextList'
 import AddContextModal from './components/AddContextModal'
-import WorkflowManagerModal from './components/WorkflowManagerModal'
+import WorkflowPanel from './components/WorkflowPanel'
 import ToastContainer, { type ToastItem } from './components/Toast'
 import WindowControls from './components/WindowControls'
 import DebugConsole from './components/DebugConsole'
@@ -350,7 +350,7 @@ function App(): React.JSX.Element {
             onCloseAll={handleCloseAll}
           />
         ) : (
-          <WorkflowManagerModal
+          <WorkflowPanel
             workflows={activeWorkflows}
             onSave={handleSaveWorkflow}
             onDelete={handleDeleteWorkflow}

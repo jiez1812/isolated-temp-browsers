@@ -8,7 +8,7 @@ interface Props {
   onDelete: (id: string) => void
 }
 
-export default function WorkflowManagerModal({ workflows, onSave, onDelete }: Props) {
+export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
   const [editing, setEditing] = useState<Workflow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
