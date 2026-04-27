@@ -1,5 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
+
+const APP_ICON = join(__dirname, '../../images/icon.ico')
 import { browserManager, detectBrowsers } from './browser/browserManager'
 import { registerContextHandlers } from './ipc/contextHandlers'
 import { registerProfileHandlers } from './ipc/profileHandlers'
@@ -11,6 +13,7 @@ function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
+    icon: APP_ICON,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -29,6 +32,7 @@ function createWindow(): BrowserWindow {
 }
 
 Menu.setApplicationMenu(null)
+app.setAppUserModelId('com.isolated-temp-browsers')
 
 app.whenReady().then(() => {
   registerContextHandlers(ipcMain)

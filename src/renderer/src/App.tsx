@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import appIcon from '@images/icon.ico'
 import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../../shared/types'
 import type { DebugLogEvent } from '../../shared/ipc'
 import ProfileSelector from './components/ProfileSelector'
@@ -25,15 +26,6 @@ function IconWand() {
   return (
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 13l7-7M9 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/>
-    </svg>
-  )
-}
-function IconLogo() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="3.5" width="12" height="9" rx="1.5"/>
-      <path d="M2 6.5h12"/>
-      <circle cx="4.2" cy="5" r=".5" fill="white"/>
     </svg>
   )
 }
@@ -285,7 +277,7 @@ function App(): React.JSX.Element {
     <div className="app">
       {/* V1 Titlebar */}
       <div className="app-title">
-        <div className="app-logo"><IconLogo/></div>
+        <div className="app-logo"><img src={appIcon} width={16} height={16} alt=""/></div>
         <span className="app-brand">Context Browser Launcher</span>
         <div className="app-title-div"/>
         <span className="app-title-label">Profile</span>
