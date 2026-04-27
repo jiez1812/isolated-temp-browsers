@@ -964,6 +964,10 @@ select option:checked {
 .browser-selector { display: flex; gap: 6px; }
 .browser-option {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   padding: 5px 0;
   border-radius: 6px;
   border: 1px solid var(--border);

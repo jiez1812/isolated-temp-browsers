@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import type { ContextBrowserConfig, Workflow, BrowserType, AvailableBrowsers } from '../../../shared/types'
+import edgeIcon from '../../../../images/microsoft.png'
+import chromeIcon from '../../../../images/chrome.png'
+import firefoxIcon from '../../../../images/firefox.png'
 
 interface Props {
   workflows: Workflow[]
@@ -9,10 +12,10 @@ interface Props {
   onCancel: () => void
 }
 
-const BROWSER_OPTIONS: { type: BrowserType; label: string }[] = [
-  { type: 'edge', label: 'Edge' },
-  { type: 'chrome', label: 'Chrome' },
-  { type: 'firefox', label: 'Firefox' },
+const BROWSER_OPTIONS: { type: BrowserType; label: string; icon: string }[] = [
+  { type: 'edge', label: 'Edge', icon: edgeIcon },
+  { type: 'chrome', label: 'Chrome', icon: chromeIcon },
+  { type: 'firefox', label: 'Firefox', icon: firefoxIcon },
 ]
 
 export const PALETTE = ['#e05c5c', '#e07c3c', '#d4b44a', '#5cc05c', '#3cb8b8', '#5b8af0', '#9b6be0', '#d45cb8']
@@ -127,7 +130,7 @@ export default function AddContextModal({ workflows, availableBrowsers, initialC
           <div className="form-row">
             <label className="form-label">Browser</label>
             <div className="browser-selector">
-              {BROWSER_OPTIONS.map(({ type, label }) => {
+              {BROWSER_OPTIONS.map(({ type, label, icon }) => {
                 const available = availableBrowsers[type]
                 return (
                   <button
@@ -138,6 +141,7 @@ export default function AddContextModal({ workflows, availableBrowsers, initialC
                     disabled={!available}
                     title={available ? label : `${label} not installed`}
                   >
+                    <img src={icon} alt={label} width={16} height={16} style={{ objectFit: 'contain' }}/>
                     {label}
                   </button>
                 )
