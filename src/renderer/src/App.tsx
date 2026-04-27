@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import appIcon from '@images/icon.ico'
-import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../../shared/types'
+import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileExport } from '../../shared/types'
 import type { DebugLogEvent } from '../../shared/ipc'
 import ProfileSelector from './components/ProfileSelector'
+import ImportProfileModal from './components/ImportProfileModal'
+import ConfirmModal from './components/ConfirmModal'
 import ContextList from './components/ContextList'
 import AddContextModal from './components/AddContextModal'
 import WorkflowPanel from './components/WorkflowPanel'
@@ -14,6 +16,20 @@ import MiniView from './MiniApp'
 type Tab = 'browsers' | 'workflows'
 
 // Tiny SVG icons (inline to avoid extra deps)
+function IconExport() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11v2h10v-2M8 2v8M5 6l3-4 3 4"/>
+    </svg>
+  )
+}
+function IconTrash() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M3 5h10M6 5V3h4v2M5 5l.7 8h4.6l.7-8"/>
+    </svg>
+  )
+}
 function IconGrid() {
   return (
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -43,6 +59,8 @@ function App(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>('browsers')
   const [isMini, setIsMini] = useState(false)
   const [availableBrowsers, setAvailableBrowsers] = useState<AvailableBrowsers>({ edge: true, chrome: false, firefox: false })
+  const [pendingImport, setPendingImport] = useState<{ data: ProfileExport; conflictName: string | null } | null>(null)
+  const [confirmingDeleteProfile, setConfirmingDeleteProfile] = useState(false)
 
   const addToast = useCallback((type: ToastItem['type'], message: string) => {
     const id = crypto.randomUUID()
@@ -115,6 +133,88 @@ function App(): React.JSX.Element {
     await window.api.deleteProfile(id)
     await loadProfiles()
     if (activeProfileId === id) setActiveProfileId(null)
+  }
+
+  const handleExportProfile = async (id: string) => {
+    try {
+      await window.api.exportProfile(id)
+    } catch (err) {
+      addToast('error', `Export failed: ${err}`)
+    }
+  }
+
+  const handleImportProfile = async () => {
+    try {
+      const result = await window.api.importProfile()
+      if (result.status === 'cancelled') return
+      if (result.status === 'error') { addToast('error', result.message); return }
+      const conflictName = profiles.some(p => p.name === result.data.profile.name)
+        ? result.data.profile.name
+        : null
+      setPendingImport({ data: result.data, conflictName })
+    } catch (err) {
+      addToast('error', `Import failed: ${err}`)
+    }
+  }
+
+  const handleConfirmImport = async (
+    data: ProfileExport,
+    resolvedName: string,
+    replaceExistingId: string | null
+  ) => {
+    setPendingImport(null)
+    try {
+      if (replaceExistingId) await window.api.deleteProfile(replaceExistingId)
+
+      // Assign new IDs to workflows, build name→id map for context references
+      const workflowNameToId = new Map<string, string>()
+      for (const wf of data.profile.workflows ?? []) {
+        const id = crypto.randomUUID()
+        workflowNameToId.set(wf.name, id)
+        const workflow: import('../../shared/types').Workflow = { id, name: wf.name, steps: wf.steps, params: wf.params }
+        await window.api.saveWorkflow(workflow)
+      }
+
+      // Determine fallback browser for unavailable types
+      const fallbackBrowser = availableBrowsers.edge ? 'edge' : availableBrowsers.chrome ? 'chrome' : 'firefox'
+
+      // Assign new IDs to contexts
+      const contextIds: string[] = []
+      for (const ctx of data.profile.contexts) {
+        const id = crypto.randomUUID()
+        contextIds.push(id)
+        const resolvedBrowser = ctx.browserType && !availableBrowsers[ctx.browserType]
+          ? fallbackBrowser
+          : ctx.browserType
+        const config: ContextBrowserConfig = {
+          id,
+          name: ctx.name,
+          startupUrl: ctx.startupUrl,
+          windowSize: ctx.windowSize,
+          ...(ctx.color && { color: ctx.color }),
+          ...(resolvedBrowser && { browserType: resolvedBrowser }),
+          ...(ctx.workflowRef && workflowNameToId.has(ctx.workflowRef) && { workflowId: workflowNameToId.get(ctx.workflowRef) }),
+          ...(ctx.workflowParams && { workflowParams: ctx.workflowParams }),
+          ...(ctx.runWorkflowOnLaunch && { runWorkflowOnLaunch: true }),
+        }
+        await window.api.saveContext(config)
+      }
+
+      const profile: Profile = {
+        id: crypto.randomUUID(),
+        name: resolvedName,
+        contextIds,
+        workflowIds: Array.from(workflowNameToId.values()),
+      }
+      await window.api.saveProfile(profile)
+      await loadProfiles()
+      await loadContexts()
+      await loadWorkflows()
+      setActiveProfileId(profile.id)
+      addToast('success', `Profile "${resolvedName}" imported`)
+    } catch (err) {
+      addToast('error', `Import failed: ${err}`)
+    }
   }
 
   // ── Browser launch/close handlers ────────────────────────────────────────────
@@ -287,7 +387,7 @@ function App(): React.JSX.Element {
           activeProfileId={activeProfileId}
           onSelect={setActiveProfileId}
           onCreate={handleCreateProfile}
-          onDelete={handleDeleteProfile}
+          onImport={handleImportProfile}
         />
 
         <div className="app-title-spacer"/>
@@ -315,6 +415,15 @@ function App(): React.JSX.Element {
             Workflows
             <span className="app-tab-count">{activeWorkflows.length}</span>
             <span className="app-kbd">Ctrl 2</span>
+          </button>
+          <div style={{ flex: 1 }}/>
+          <button className="app-tab" onClick={() => handleExportProfile(activeProfileId)} title="Export profile">
+            <IconExport/>
+            Export
+          </button>
+          <button className="app-tab app-tab--danger" onClick={() => setConfirmingDeleteProfile(true)} title="Delete profile">
+            <IconTrash/>
+            Delete
           </button>
         </div>
       )}
@@ -368,6 +477,27 @@ function App(): React.JSX.Element {
           initialConfig={editingContext}
           onSave={handleSaveEdit}
           onCancel={() => setEditingContext(null)}
+        />
+      )}
+
+      {pendingImport && (
+        <ImportProfileModal
+          data={pendingImport.data}
+          conflictingName={pendingImport.conflictName}
+          existingProfiles={profiles}
+          availableBrowsers={availableBrowsers}
+          onImport={handleConfirmImport}
+          onCancel={() => setPendingImport(null)}
+        />
+      )}
+
+      {confirmingDeleteProfile && activeProfile && (
+        <ConfirmModal
+          title="Delete Profile"
+          message={`Delete "${activeProfile.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={() => { handleDeleteProfile(activeProfileId!); setConfirmingDeleteProfile(false) }}
+          onCancel={() => setConfirmingDeleteProfile(false)}
         />
       )}
 

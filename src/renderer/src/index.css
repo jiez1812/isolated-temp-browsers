@@ -334,6 +334,8 @@ body {
   transition: background 0.12s, color 0.12s;
 }
 .app-tab:hover { background: var(--surface-2); color: var(--fg); }
+.app-tab--danger { color: var(--fg-3); }
+.app-tab--danger:hover { background: oklch(0.6 0.2 25 / 0.12); color: oklch(0.72 0.18 25); }
 .app-tab.active {
   color: var(--fg);
   background: var(--bg-raised);

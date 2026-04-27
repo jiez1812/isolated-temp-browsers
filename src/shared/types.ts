@@ -51,3 +51,35 @@ export interface Profile {
   contextIds: string[]
   workflowIds?: string[]
 }
+
+/** Context entry in an exported profile YAML — no IDs, workflow referenced by name */
+export interface ProfileExportContext {
+  name: string
+  color?: string
+  browserType?: BrowserType
+  startupUrl: string
+  windowSize: WindowSize
+  workflowRef?: string
+  workflowParams?: Record<string, string>
+  runWorkflowOnLaunch?: boolean
+}
+
+export interface ProfileExportWorkflow {
+  name: string
+  steps: WorkflowStep[]
+  params: WorkflowParam[]
+}
+
+export interface ProfileExport {
+  version: '1.0'
+  profile: {
+    name: string
+    contexts: ProfileExportContext[]
+    workflows: ProfileExportWorkflow[]
+  }
+}
+
+export type ProfileImportResult =
+  | { status: 'ok'; data: ProfileExport }
+  | { status: 'cancelled' }
+  | { status: 'error'; message: string }

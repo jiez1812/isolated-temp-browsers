@@ -1,4 +1,4 @@
-import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../../shared/types'
+import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileImportResult } from '../../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
 
 declare global {
@@ -14,6 +14,8 @@ declare global {
       loadProfile: (id: string) => Promise<Profile | null>
       saveProfile: (profile: Profile) => Promise<void>
       deleteProfile: (id: string) => Promise<void>
+      exportProfile: (id: string) => Promise<void>
+      importProfile: () => Promise<ProfileImportResult>
 
       listWorkflows: () => Promise<Workflow[]>
       saveWorkflow: (workflow: Workflow) => Promise<void>

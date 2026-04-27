@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import type { Profile } from '../../../shared/types'
-import ConfirmModal from './ConfirmModal'
 
 interface Props {
   profiles: Profile[]
   activeProfileId: string | null
   onSelect: (id: string | null) => void
   onCreate: (name: string) => void
-  onDelete: (id: string) => void
+  onImport: () => void
 }
 
 function IconChev() {
@@ -18,12 +17,11 @@ function IconChev() {
   )
 }
 
-export default function ProfileSelector({ profiles, activeProfileId, onSelect, onCreate, onDelete }: Props) {
+export default function ProfileSelector({ profiles, activeProfileId, onSelect, onCreate, onImport }: Props) {
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
   const [nameError, setNameError] = useState('')
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
   const activeProfile = profiles.find(p => p.id === activeProfileId)
@@ -115,14 +113,14 @@ export default function ProfileSelector({ profiles, activeProfileId, onSelect, o
               </button>
             )}
 
-            {activeProfileId && !creating && (
+            {!creating && (
               <>
                 <div className="profile-popover-divider"/>
                 <button
-                  className="profile-popover-action danger"
-                  onClick={() => { setConfirmingDelete(true); setOpen(false) }}
+                  className="profile-popover-action"
+                  onClick={() => { onImport(); setOpen(false) }}
                 >
-                  Delete "{activeProfile?.name}"
+                  Import profile…
                 </button>
               </>
             )}
@@ -130,15 +128,6 @@ export default function ProfileSelector({ profiles, activeProfileId, onSelect, o
         )}
       </div>
 
-      {confirmingDelete && activeProfile && (
-        <ConfirmModal
-          title="Delete Profile"
-          message={`Delete "${activeProfile.name}"? This cannot be undone.`}
-          confirmLabel="Delete"
-          onConfirm={() => { onDelete(activeProfileId!); setConfirmingDelete(false) }}
-          onCancel={() => setConfirmingDelete(false)}
-        />
-      )}
     </>
   )
 }

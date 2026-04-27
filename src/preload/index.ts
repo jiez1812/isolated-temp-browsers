@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers } from '../shared/types'
+import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileImportResult } from '../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent } from '../shared/ipc'
 
 contextBridge.exposeInMainWorld('api', {
@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('api', {
   loadProfile: (id: string): Promise<Profile | null> => ipcRenderer.invoke(IPC.PROFILE_LOAD, id),
   saveProfile: (profile: Profile): Promise<void> => ipcRenderer.invoke(IPC.PROFILE_SAVE, profile),
   deleteProfile: (id: string): Promise<void> => ipcRenderer.invoke(IPC.PROFILE_DELETE, id),
+  exportProfile: (id: string): Promise<void> => ipcRenderer.invoke(IPC.PROFILE_EXPORT, id),
+  importProfile: (): Promise<ProfileImportResult> => ipcRenderer.invoke(IPC.PROFILE_IMPORT),
 
   // Workflows
   listWorkflows: (): Promise<Workflow[]> => ipcRenderer.invoke(IPC.WORKFLOW_LIST),

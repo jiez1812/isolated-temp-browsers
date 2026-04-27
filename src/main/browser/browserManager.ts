@@ -11,20 +11,21 @@ const CHROME_PATHS = [
   `${process.env['LOCALAPPDATA']}\\Google\\Chrome\\Application\\chrome.exe`,
 ]
 
-const FIREFOX_PATHS = [
-  'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
-  'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe',
-]
-
-function findExecutable(paths: string[]): string | null {
-  return paths.find(p => existsSync(p)) ?? null
+// Playwright bundles its own Firefox — system Firefox uses a different protocol
+// and cannot be used directly. Check whether the Playwright-managed binary exists.
+function isPlaywrightFirefoxAvailable(): boolean {
+  try {
+    return existsSync(firefox.executablePath())
+  } catch {
+    return false
+  }
 }
 
 export function detectBrowsers(): AvailableBrowsers {
   return {
     edge: true,
     chrome: CHROME_PATHS.some(p => existsSync(p)),
-    firefox: FIREFOX_PATHS.some(p => existsSync(p)),
+    firefox: isPlaywrightFirefoxAvailable(),
   }
 }
 
@@ -50,9 +51,7 @@ class BrowserManager {
     if (type === 'chrome') {
       browser = await chromium.launch({ channel: 'chrome', headless: false })
     } else if (type === 'firefox') {
-      const executablePath = findExecutable(FIREFOX_PATHS)
-      if (!executablePath) throw new Error('Firefox executable not found')
-      browser = await firefox.launch({ executablePath, headless: false })
+      browser = await firefox.launch({ headless: false })
     } else {
       browser = await chromium.launch({ channel: 'msedge', headless: false })
     }
