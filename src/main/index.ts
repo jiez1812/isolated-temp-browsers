@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
+import { browserManager } from './browser/browserManager'
 import { registerContextHandlers } from './ipc/contextHandlers'
 import { registerProfileHandlers } from './ipc/profileHandlers'
 import { registerWorkflowHandlers } from './ipc/workflowHandlers'
