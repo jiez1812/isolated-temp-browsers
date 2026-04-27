@@ -1,7 +1,7 @@
 import { chromium } from 'playwright'
 import type { Browser, BrowserContext } from 'playwright'
 import type { WebContents } from 'electron'
-import { contextStore } from '../store/contextStore'
+import type { ContextBrowserConfig } from '../../shared/types'
 import { IPC } from '../../shared/ipc'
 
 interface RunningContext {
@@ -22,13 +22,11 @@ class BrowserManager {
     return this.browser
   }
 
-  async launch(configId: string, sender: WebContents): Promise<void> {
+  async launch(config: ContextBrowserConfig, sender: WebContents): Promise<void> {
+    const configId = config.id
     if (this.running.has(configId) || this.launching.has(configId)) return
     this.launching.add(configId)
     try {
-    const config = contextStore.load(configId)
-    if (!config) throw new Error(`Context config ${configId} not found`)
-
     // Grab index before any await so concurrent launches each get a unique slot
     const windowIndex = this.nextWindowIndex++
     const cascadeOffset = (windowIndex % 8) * 50
