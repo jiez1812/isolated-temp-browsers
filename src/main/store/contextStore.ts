@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { join, basename } from 'path'
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, rmSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
+import { readdir, readFile } from 'fs/promises'
 import type { ContextBrowserConfig } from '../../shared/types'
 
 const dir = (): string => {
@@ -16,10 +17,12 @@ const filePath = (id: string): string => {
 }
 
 export const contextStore = {
-  list(): ContextBrowserConfig[] {
-    return readdirSync(dir())
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => JSON.parse(readFileSync(join(dir(), f), 'utf-8')) as ContextBrowserConfig)
+  async list(): Promise<ContextBrowserConfig[]> {
+    const d = dir()
+    const files = (await readdir(d)).filter((f) => f.endsWith('.json'))
+    return Promise.all(
+      files.map(async (f) => JSON.parse(await readFile(join(d, f), 'utf-8')) as ContextBrowserConfig)
+    )
   },
 
   load(id: string): ContextBrowserConfig | null {
