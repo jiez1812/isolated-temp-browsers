@@ -83,6 +83,7 @@ class WorkflowExecutor {
       case 'wait':   return `wait  ${step.selector}  (${step.timeout ?? 10000}ms)`
       case 'assert':      return `assert  ${step.selector}  visible`
       case 'waitForText':   return `waitForText  "${resolve(step.value)}"  (${step.timeout ?? 30000}ms)`
+      case 'waitSeconds':   return `waitSeconds  ${(step.timeout ?? 0) / 1000}s`
       case 'closeBrowser': return `closeBrowser`
       default:             return JSON.stringify(step)
     }
@@ -128,6 +129,9 @@ class WorkflowExecutor {
         )
         break
       }
+      case 'waitSeconds':
+        await page.waitForTimeout(step.timeout ?? 0)
+        break
     }
   }
 }

@@ -15,6 +15,7 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   wait:         'Wait for element',
   assert:       'Assert visible',
   waitForText:  'Wait for text in URL',
+  waitSeconds:  'Wait N seconds',
   closeBrowser: 'Close browser',
 }
 
@@ -473,6 +474,18 @@ function StepRow({
             />
             <TimeoutCell step={step} onUpdate={onUpdate}/>
           </>
+        )
+      case 'waitSeconds':
+        return (
+          <input
+            className="form-input wf-ed-step-single"
+            type="number"
+            min="0"
+            step="0.5"
+            value={step.timeout != null ? step.timeout / 1000 : ''}
+            onChange={e => onUpdate({ timeout: e.target.value ? Math.round(parseFloat(e.target.value) * 1000) : undefined })}
+            placeholder="seconds, e.g. 3"
+          />
         )
       case 'closeBrowser':
         return <div className="wf-ed-step-no-fields">— no additional fields required —</div>

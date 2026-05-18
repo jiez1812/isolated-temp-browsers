@@ -1,5 +1,5 @@
 export interface WorkflowStep {
-  type: 'goto' | 'fill' | 'click' | 'wait' | 'assert' | 'waitForText' | 'closeBrowser'
+  type: 'goto' | 'fill' | 'click' | 'wait' | 'assert' | 'waitForText' | 'waitSeconds' | 'closeBrowser'
   selector?: string
   value?: string
   url?: string
