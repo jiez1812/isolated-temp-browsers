@@ -76,8 +76,9 @@ class WorkflowExecutor {
       case 'fill':   return `fill  ${step.selector}  →  "${resolve(step.value)}"`
       case 'click':  return `click  ${step.selector}`
       case 'wait':   return `wait  ${step.selector}  (${step.timeout ?? 10000}ms)`
-      case 'assert': return `assert  ${step.selector}  visible`
-      default:       return JSON.stringify(step)
+      case 'assert':      return `assert  ${step.selector}  visible`
+      case 'waitForText': return `waitForText  "${resolve(step.value)}"  (${step.timeout ?? 30000}ms)`
+      default:            return JSON.stringify(step)
     }
   }
 
@@ -112,6 +113,15 @@ class WorkflowExecutor {
           timeout: step.timeout ?? 10000
         })
         break
+      case 'waitForText': {
+        const text = resolve(step.value)
+        await page.waitForFunction(
+          (t) => window.location.href.includes(t) || document.body.innerText.includes(t),
+          text,
+          { timeout: step.timeout ?? 30000 }
+        )
+        break
+      }
     }
   }
 }

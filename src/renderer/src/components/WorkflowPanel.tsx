@@ -92,7 +92,8 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   fill: 'Fill input',
   click: 'Click',
   wait: 'Wait for element',
-  assert: 'Assert visible'
+  assert: 'Assert visible',
+  waitForText: 'Wait for text/URL string'
 }
 
 function WorkflowEditor({
@@ -249,14 +250,34 @@ function WorkflowEditor({
                     placeholder="value or {{param}}"
                   />
                 )}
-                {(step.type === 'wait' || step.type === 'assert') && (
+                {step.type === 'waitForText' && (
                   <input
-                    className="form-input wf-step-timeout"
-                    type="number"
-                    value={step.timeout ?? ''}
-                    onChange={e => updateStep(i, { timeout: e.target.value ? parseInt(e.target.value) : undefined })}
-                    placeholder="ms"
+                    className="form-input"
+                    value={step.value ?? ''}
+                    onChange={e => updateStep(i, { value: e.target.value })}
+                    placeholder="e.g. order_id= or {{param}}"
                   />
+                )}
+                {(step.type === 'wait' || step.type === 'assert' || step.type === 'waitForText') && (
+                  <>
+                    {step.timeout !== 0 && (
+                      <input
+                        className="form-input wf-step-timeout"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={step.timeout != null ? step.timeout / 1000 : ''}
+                        onChange={e => updateStep(i, { timeout: e.target.value ? Math.round(parseFloat(e.target.value) * 1000) : undefined })}
+                        placeholder={step.type === 'waitForText' ? '30 s' : '10 s'}
+                      />
+                    )}
+                    <button
+                      type="button"
+                      className={`wf-step-infinite${step.timeout === 0 ? ' wf-step-infinite--on' : ''}`}
+                      onClick={() => updateStep(i, { timeout: step.timeout === 0 ? undefined : 0 })}
+                      title={step.timeout === 0 ? 'Infinite wait — click to set a timeout' : 'No timeout limit'}
+                    >∞</button>
+                  </>
                 )}
                 <button className="btn-icon btn-icon--danger" onClick={() => removeStep(i)}>×</button>
               </div>
