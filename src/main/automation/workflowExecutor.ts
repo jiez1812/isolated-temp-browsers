@@ -83,7 +83,8 @@ class WorkflowExecutor {
       case 'wait':   return `wait  ${step.selector}  (${step.timeout ?? 10000}ms)`
       case 'assert':      return `assert  ${step.selector}  visible`
       case 'waitForText':   return `waitForText  "${resolve(step.value)}"  (${step.timeout ?? 30000}ms)`
-      case 'waitSeconds':   return `waitSeconds  ${(step.timeout ?? 0) / 1000}s`
+      case 'waitSeconds':      return `waitSeconds  ${(step.timeout ?? 0) / 1000}s`
+      case 'waitForDownload':  return `waitForDownload  ${step.selector ? step.selector : '(any)'}`
       case 'closeBrowser': return `closeBrowser`
       default:             return JSON.stringify(step)
     }
@@ -132,6 +133,20 @@ class WorkflowExecutor {
       case 'waitSeconds':
         await page.waitForTimeout(step.timeout ?? 0)
         break
+      case 'waitForDownload': {
+        const timeout = step.timeout ?? 30000
+        if (step.selector) {
+          const [download] = await Promise.all([
+            page.waitForEvent('download', { timeout }),
+            page.click(resolve(step.selector)),
+          ])
+          await download.path()
+        } else {
+          const download = await page.waitForEvent('download', { timeout })
+          await download.path()
+        }
+        break
+      }
     }
   }
 }

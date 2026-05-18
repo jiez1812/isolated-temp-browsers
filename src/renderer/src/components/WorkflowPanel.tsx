@@ -15,8 +15,9 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   wait:         'Wait for element',
   assert:       'Assert visible',
   waitForText:  'Wait for text in URL',
-  waitSeconds:  'Wait N seconds',
-  closeBrowser: 'Close browser',
+  waitSeconds:     'Wait N seconds',
+  waitForDownload: 'Wait for download',
+  closeBrowser:    'Close browser',
 }
 
 const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
@@ -24,6 +25,7 @@ const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
   { label: 'Interaction', types: ['fill', 'click'] },
   { label: 'Assertions',  types: ['assert', 'wait', 'waitForText'] },
   { label: 'Timing',      types: ['waitSeconds'] },
+  { label: 'Files',       types: ['waitForDownload'] },
   { label: 'Control',     types: ['closeBrowser'] },
 ]
 
@@ -533,6 +535,18 @@ function StepRow({
             placeholder="seconds, e.g. 3"
           />
         )
+      case 'waitForDownload':
+        return (
+          <>
+            <input
+              className="form-input"
+              value={step.selector ?? ''}
+              onChange={e => onUpdate({ selector: e.target.value || undefined })}
+              placeholder="Trigger selector (optional)"
+            />
+            <TimeoutCell step={step} onUpdate={onUpdate}/>
+          </>
+        )
       case 'closeBrowser':
         return <div className="wf-ed-step-no-fields">— no additional fields required —</div>
     }
@@ -592,7 +606,7 @@ function TimeoutCell({
           onChange={e =>
             onUpdate({ timeout: e.target.value ? Math.round(parseFloat(e.target.value) * 1000) : undefined })
           }
-          placeholder={step.type === 'waitForText' ? '30 s' : '10 s'}
+          placeholder={step.type === 'waitForText' || step.type === 'waitForDownload' ? '30 s' : '10 s'}
         />
       )}
       <button
