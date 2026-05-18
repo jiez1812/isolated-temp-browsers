@@ -963,6 +963,14 @@ select option:checked {
   background: var(--accent);
   color: #fff;
 }
+select optgroup {
+  background: oklch(0.12 0.02 270);
+  color: oklch(0.55 0.08 270);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
 
 /* ── Color swatches ── */
 

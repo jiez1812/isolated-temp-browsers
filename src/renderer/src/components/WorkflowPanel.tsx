@@ -19,6 +19,14 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   closeBrowser: 'Close browser',
 }
 
+const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
+  { label: 'Navigation',  types: ['goto'] },
+  { label: 'Interaction', types: ['fill', 'click'] },
+  { label: 'Assertions',  types: ['assert', 'wait', 'waitForText'] },
+  { label: 'Timing',      types: ['waitSeconds'] },
+  { label: 'Control',     types: ['closeBrowser'] },
+]
+
 // ── Icons ──────────────────────────────────────────────────────────────────────
 
 function IconBack() {
@@ -500,8 +508,12 @@ function StepRow({
         value={step.type}
         onChange={e => changeType(e.target.value as WorkflowStep['type'])}
       >
-        {(Object.keys(STEP_LABELS) as WorkflowStep['type'][]).map(t => (
-          <option key={t} value={t}>{STEP_LABELS[t]}</option>
+        {STEP_GROUPS.map(g => (
+          <optgroup key={g.label} label={g.label}>
+            {g.types.map(t => (
+              <option key={t} value={t}>{STEP_LABELS[t]}</option>
+            ))}
+          </optgroup>
         ))}
       </select>
       {renderFields()}
