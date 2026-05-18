@@ -45,6 +45,11 @@ class WorkflowExecutor {
         const prefix = `[step ${i + 1}/${total}]`
         onDebugLog?.('info', `${prefix} ${this.buildStepLabel(step, params, maskedKeys)}`)
         const t0 = Date.now()
+        if (step.type === 'closeBrowser') {
+          await context.close()
+          onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
+          break
+        }
         await this.executeStep(page, step, params)
         onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
       }
@@ -77,8 +82,9 @@ class WorkflowExecutor {
       case 'click':  return `click  ${step.selector}`
       case 'wait':   return `wait  ${step.selector}  (${step.timeout ?? 10000}ms)`
       case 'assert':      return `assert  ${step.selector}  visible`
-      case 'waitForText': return `waitForText  "${resolve(step.value)}"  (${step.timeout ?? 30000}ms)`
-      default:            return JSON.stringify(step)
+      case 'waitForText':   return `waitForText  "${resolve(step.value)}"  (${step.timeout ?? 30000}ms)`
+      case 'closeBrowser': return `closeBrowser`
+      default:             return JSON.stringify(step)
     }
   }
 

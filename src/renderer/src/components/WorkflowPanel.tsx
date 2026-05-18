@@ -93,7 +93,8 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   click: 'Click',
   wait: 'Wait for element',
   assert: 'Assert visible',
-  waitForText: 'Wait for URL string'
+  waitForText: 'Wait for URL string',
+  closeBrowser: 'Close browser'
 }
 
 function WorkflowEditor({
