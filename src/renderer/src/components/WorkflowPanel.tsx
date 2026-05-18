@@ -224,6 +224,7 @@ function WorkflowEditor({
   const updateStep = (i: number, patch: Partial<WorkflowStep>) =>
     setSteps(s => s.map((x, j) => (j === i ? ({ ...x, ...patch } as WorkflowStep) : x)))
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null)
   const [overIdx, setOverIdx] = useState<number | null>(null)
 
@@ -247,13 +248,19 @@ function WorkflowEditor({
     URL.revokeObjectURL(url)
   }
 
-  const handleDelete = () => {
-    if (window.confirm(`Delete "${name}"? Browsers assigned to it will lose their automation.`)) {
-      onDelete?.()
-    }
-  }
+  const handleDelete = () => setShowDeleteConfirm(true)
 
   return (
+    <>
+    {showDeleteConfirm && (
+      <ConfirmModal
+        title="Delete Workflow"
+        message={`Delete "${name}"? Browsers assigned to it will lose their automation.`}
+        confirmLabel="Delete"
+        onConfirm={() => { setShowDeleteConfirm(false); onDelete?.() }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
+    )}
     <div className="wf-editor">
       {/* Header */}
       <div className="wf-editor-hd">
@@ -429,6 +436,7 @@ function WorkflowEditor({
         </button>
       </div>
     </div>
+    </>
   )
 }
 
