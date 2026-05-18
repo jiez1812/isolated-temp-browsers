@@ -103,6 +103,9 @@ class BrowserManager {
         })();
       `)
 
+      // No-op prevents Playwright from auto-dismissing native dialogs (alert/confirm/prompt).
+      context.on('dialog', () => {})
+
       const page = await context.newPage()
 
       // CDP window positioning only works for Chromium-based browsers
