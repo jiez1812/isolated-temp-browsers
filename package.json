@@ -1,6 +1,6 @@
 {
   "name": "isolated-temp-browsers",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Electron launcher for isolated Playwright browser contexts",
   "main": "out/main/index.js",
   "scripts": {
