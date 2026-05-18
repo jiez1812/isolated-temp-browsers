@@ -1768,16 +1768,34 @@ select optgroup {
 
 .wf-ed-step {
   display: grid;
-  grid-template-columns: 28px 150px 1fr 1fr 28px;
+  grid-template-columns: 16px 28px 150px 1fr 1fr 28px;
   gap: 8px;
   align-items: center;
   padding: 8px 10px;
   background: oklch(0 0 0 / 0.18);
   border: 0.5px solid var(--border);
   border-radius: 9px;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, opacity 0.12s;
 }
 .wf-ed-step:hover { border-color: var(--border-2); }
+.wf-ed-step--dragging { opacity: 0.35; }
+.wf-ed-step--over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px oklch(0.64 var(--accent-c) var(--accent-h) / 0.25);
+}
+
+.wf-ed-step-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-3);
+  cursor: grab;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.wf-ed-step-handle:active { cursor: grabbing; }
+.wf-ed-step:hover .wf-ed-step-handle { opacity: 1; }
 
 /* Scoped input/select height in step rows */
 .wf-ed-step .form-input,
@@ -1795,12 +1813,12 @@ select optgroup {
   flex-shrink: 0;
 }
 
-/* Single field spanning cols 3–4 */
-.wf-ed-step-single { grid-column: 3 / 5; }
+/* Single field spanning cols 4–5 */
+.wf-ed-step-single { grid-column: 4 / 6; }
 
 /* No-fields placeholder (closeBrowser) */
 .wf-ed-step-no-fields {
-  grid-column: 3 / 5;
+  grid-column: 4 / 6;
   color: var(--fg-3);
   font-size: 11.5px;
   font-style: italic;

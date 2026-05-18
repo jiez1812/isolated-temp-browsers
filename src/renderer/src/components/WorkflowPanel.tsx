@@ -71,6 +71,15 @@ function IconExport() {
     </svg>
   )
 }
+function IconGrip() {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+      <circle cx="3" cy="2" r="1.2"/><circle cx="7" cy="2" r="1.2"/>
+      <circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/>
+      <circle cx="3" cy="12" r="1.2"/><circle cx="7" cy="12" r="1.2"/>
+    </svg>
+  )
+}
 
 // ── Workflow list panel ────────────────────────────────────────────────────────
 
@@ -212,6 +221,16 @@ function WorkflowEditor({
   const removeStep = (i: number) => setSteps(s => s.filter((_, j) => j !== i))
   const updateStep = (i: number, patch: Partial<WorkflowStep>) =>
     setSteps(s => s.map((x, j) => (j === i ? ({ ...x, ...patch } as WorkflowStep) : x)))
+
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null)
+  const [overIdx, setOverIdx] = useState<number | null>(null)
+
+  const moveStep = (from: number, to: number) =>
+    setSteps(s => {
+      const arr = [...s]
+      arr.splice(to, 0, arr.splice(from, 1)[0])
+      return arr
+    })
 
   const handleExport = () => {
     const blob = new Blob(
@@ -376,6 +395,17 @@ function WorkflowEditor({
                   index={i}
                   onUpdate={patch => updateStep(i, patch)}
                   onRemove={() => removeStep(i)}
+                  dragging={draggingIdx === i}
+                  over={overIdx === i && draggingIdx !== i}
+                  onDragStart={() => setDraggingIdx(i)}
+                  onDragEnter={() => { if (i !== draggingIdx) setOverIdx(i) }}
+                  onDragLeave={() => setOverIdx(null)}
+                  onDrop={() => {
+                    if (draggingIdx !== null && draggingIdx !== i) moveStep(draggingIdx, i)
+                    setDraggingIdx(null)
+                    setOverIdx(null)
+                  }}
+                  onDragEnd={() => { setDraggingIdx(null); setOverIdx(null) }}
                 />
               ))}
             </div>
@@ -404,11 +434,19 @@ function WorkflowEditor({
 
 function StepRow({
   step, index, onUpdate, onRemove,
+  dragging, over, onDragStart, onDragEnter, onDragLeave, onDrop, onDragEnd,
 }: {
   step: WorkflowStep
   index: number
   onUpdate: (patch: Partial<WorkflowStep>) => void
   onRemove: () => void
+  dragging: boolean
+  over: boolean
+  onDragStart: () => void
+  onDragEnter: () => void
+  onDragLeave: () => void
+  onDrop: () => void
+  onDragEnd: () => void
 }) {
   const changeType = (type: WorkflowStep['type']) =>
     onUpdate({ type, selector: undefined, url: undefined, value: undefined, timeout: undefined })
@@ -501,7 +539,19 @@ function StepRow({
   }
 
   return (
-    <div className="wf-ed-step">
+    <div
+      className={['wf-ed-step', dragging ? 'wf-ed-step--dragging' : '', over ? 'wf-ed-step--over' : ''].filter(Boolean).join(' ')}
+      draggable
+      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
+      onDragEnter={e => { e.preventDefault(); onDragEnter() }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+      onDragLeave={e => {
+        if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) onDragLeave()
+      }}
+      onDrop={e => { e.preventDefault(); onDrop() }}
+      onDragEnd={onDragEnd}
+    >
+      <div className="wf-ed-step-handle" title="Drag to reorder"><IconGrip/></div>
       <div className="wf-ed-step-num">{index + 1}</div>
       <select
         className="form-select"
