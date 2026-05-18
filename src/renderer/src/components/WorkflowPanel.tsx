@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import type { Workflow, WorkflowStep, WorkflowParam } from '../../../shared/types'
 import ConfirmModal from './ConfirmModal'
 
@@ -8,68 +8,132 @@ interface Props {
   onDelete: (id: string) => void
 }
 
+const STEP_LABELS: Record<WorkflowStep['type'], string> = {
+  goto:         'Go to URL',
+  fill:         'Fill input',
+  click:        'Click',
+  wait:         'Wait for element',
+  assert:       'Assert visible',
+  waitForText:  'Wait for text in URL',
+  closeBrowser: 'Close browser',
+}
+
+// ── Icons ──────────────────────────────────────────────────────────────────────
+
+function IconBack() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 8H3m0 0l4-4m-4 4l4 4"/>
+    </svg>
+  )
+}
+function IconPlus() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      <path d="M8 3v10M3 8h10"/>
+    </svg>
+  )
+}
+function IconX() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      <path d="M4 4l8 8M12 4l-8 8"/>
+    </svg>
+  )
+}
+function IconBolt() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M9 1L3 9h4l-1 6 6-8H8l1-6z"/>
+    </svg>
+  )
+}
+function IconTrash() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 4.5h10M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4.5 4.5L5 13a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-8.5"/>
+    </svg>
+  )
+}
+function IconExport() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10"/>
+    </svg>
+  )
+}
+
+// ── Workflow list panel ────────────────────────────────────────────────────────
+
 export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
-  const [editing, setEditing] = useState<Workflow | null>(null)
+  const [editing, setEditing] = useState<Workflow | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const handleNew = () =>
-    setEditing({ id: crypto.randomUUID(), name: '', steps: [], params: [] })
+  const deletingWorkflow = workflows.find(w => w.id === deletingId)
 
-  if (editing) {
+  if (editing !== null) {
+    const workflow = editing === 'new' ? null : editing
     const existingNames = workflows
-      .filter(w => w.id !== editing.id)
+      .filter(w => editing === 'new' || w.id !== (editing as Workflow).id)
       .map(w => w.name)
     return (
       <WorkflowEditor
-        workflow={editing}
+        workflow={workflow}
         existingNames={existingNames}
         onSave={w => { onSave(w); setEditing(null) }}
         onCancel={() => setEditing(null)}
+        onDelete={workflow ? () => { onDelete(workflow.id); setEditing(null) } : undefined}
       />
     )
   }
-
-  const deletingWorkflow = workflows.find(w => w.id === deletingId)
 
   return (
     <>
       <div className="workflow-panel">
         <div className="workflow-panel-header">
           <h2>Automation Workflows</h2>
-          <button className="btn btn-primary btn-sm" onClick={handleNew}>+ New Workflow</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}>
+            <IconPlus/> New Workflow
+          </button>
         </div>
 
         <div className="workflow-panel-body">
           {workflows.length === 0 ? (
             <div className="wf-list-empty">
+              <div className="wf-empty-ico"><IconBolt/></div>
               <p>No workflows yet. Create one to automate browser actions.</p>
+              <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}>
+                <IconPlus/> Create Workflow
+              </button>
             </div>
           ) : (
             <div className="wf-list">
               {workflows.map(w => (
                 <div key={w.id} className="wf-list-item">
+                  <div className="wf-icon"><IconBolt/></div>
                   <div className="wf-list-info">
                     <span className="wf-list-name">{w.name}</span>
-                    <span className="wf-list-meta">
-                      {w.steps.length} step{w.steps.length !== 1 ? 's' : ''}
-                      {w.params.length > 0 ? ` · ${w.params.length} param${w.params.length !== 1 ? 's' : ''}` : ''}
-                    </span>
+                    <div className="wf-list-meta">
+                      <span className="wf-list-pill">{w.steps.length} step{w.steps.length !== 1 ? 's' : ''}</span>
+                      <span className="wf-list-pill">{w.params.length} param{w.params.length !== 1 ? 's' : ''}</span>
+                      {w.params.length > 0 && <span>{w.params.map(p => p.name).join(' · ')}</span>}
+                    </div>
                   </div>
                   <div className="wf-list-actions">
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditing(w)}>Edit</button>
+                    <button className="btn btn-sm" onClick={() => setEditing(w)}>Edit</button>
                     <button
-                      className="btn-icon btn-icon--danger"
+                      className="btn btn-ghost btn-sm btn-icon"
                       onClick={() => setDeletingId(w.id)}
                       title="Delete workflow"
-                    >×</button>
+                    >
+                      <IconX/>
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
-
       </div>
 
       {deletingId && deletingWorkflow && (
@@ -85,214 +149,383 @@ export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
   )
 }
 
-// ── Workflow editor ────────────────────────────────────────────────────────────
-
-const STEP_LABELS: Record<WorkflowStep['type'], string> = {
-  goto: 'Go to URL',
-  fill: 'Fill input',
-  click: 'Click',
-  wait: 'Wait for element',
-  assert: 'Assert visible',
-  waitForText: 'Wait for URL string',
-  closeBrowser: 'Close browser'
-}
+// ── Full-page workflow editor ──────────────────────────────────────────────────
 
 function WorkflowEditor({
   workflow,
   existingNames,
   onSave,
-  onCancel
+  onCancel,
+  onDelete,
 }: {
-  workflow: Workflow
+  workflow: Workflow | null
   existingNames: string[]
   onSave: (w: Workflow) => void
   onCancel: () => void
+  onDelete?: () => void
 }) {
-  const [name, setName] = useState(workflow.name)
+  const isNew = workflow === null
+  const [name, setName] = useState(workflow?.name ?? '')
   const [nameError, setNameError] = useState('')
-  const [steps, setSteps] = useState<WorkflowStep[]>(workflow.steps)
-  const [params, setParams] = useState<WorkflowParam[]>(workflow.params)
+  const [params, setParams] = useState<WorkflowParam[]>(workflow?.params ?? [])
+  const [steps, setSteps] = useState<WorkflowStep[]>(
+    workflow?.steps ?? [{ type: 'goto', url: '' }]
+  )
 
-  const addStep = () => setSteps(prev => [...prev, { type: 'goto', url: '' }])
-  const removeStep = (i: number) => setSteps(prev => prev.filter((_, idx) => idx !== i))
-  const updateStep = (i: number, partial: Partial<WorkflowStep>) =>
-    setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, ...partial } : s))
+  const canSave = name.trim() !== '' && steps.length > 0
 
-  const addParam = () => setParams(prev => [...prev, { name: '', label: '', defaultValue: '' }])
-  const removeParam = (i: number) => setParams(prev => prev.filter((_, idx) => idx !== i))
-  const updateParam = (i: number, partial: Partial<WorkflowParam>) =>
-    setParams(prev => prev.map((p, idx) => idx === i ? { ...p, ...partial } : p))
-
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     const trimmed = name.trim()
     if (!trimmed) return
     if (existingNames.includes(trimmed)) {
       setNameError('A workflow with this name already exists')
       return
     }
-    onSave({ ...workflow, name: trimmed, steps, params })
+    onSave({ id: workflow?.id ?? crypto.randomUUID(), name: trimmed, params, steps })
+  }, [name, existingNames, workflow, params, steps, onSave])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && canSave) handleSave()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onCancel, handleSave, canSave])
+
+  const addParam = () =>
+    setParams(p => [...p, { name: '', label: '', defaultValue: '', masked: false }])
+  const removeParam = (i: number) => setParams(p => p.filter((_, j) => j !== i))
+  const updateParam = (i: number, patch: Partial<WorkflowParam>) =>
+    setParams(p => p.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+
+  const addStep = () => setSteps(s => [...s, { type: 'goto', url: '' }])
+  const removeStep = (i: number) => setSteps(s => s.filter((_, j) => j !== i))
+  const updateStep = (i: number, patch: Partial<WorkflowStep>) =>
+    setSteps(s => s.map((x, j) => (j === i ? ({ ...x, ...patch } as WorkflowStep) : x)))
+
+  const handleExport = () => {
+    const blob = new Blob(
+      [JSON.stringify({ name, params, steps }, null, 2)],
+      { type: 'application/json' }
+    )
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${(name || 'workflow').toLowerCase().replace(/\s+/g, '-')}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const isNew = !workflow.name
+  const handleDelete = () => {
+    if (window.confirm(`Delete "${name}"? Browsers assigned to it will lose their automation.`)) {
+      onDelete?.()
+    }
+  }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal modal--lg">
-        <div className="modal-header">
-          <h2>{isNew ? 'New Workflow' : 'Edit Workflow'}</h2>
-          <button className="btn-icon" onClick={onCancel} aria-label="Back">←</button>
+    <div className="wf-editor">
+      {/* Header */}
+      <div className="wf-editor-hd">
+        <button className="wf-editor-back" onClick={onCancel} aria-label="Back">
+          <IconBack/>
+        </button>
+        <span className="wf-editor-title">{isNew ? 'New Workflow' : 'Edit Workflow'}</span>
+        <div className="wf-editor-actions">
+          {!isNew && (
+            <button className="btn btn-ghost btn-sm" onClick={handleExport}>
+              <IconExport/> Export
+            </button>
+          )}
+          {!isNew && onDelete && (
+            <button className="btn btn-ghost btn-sm" onClick={handleDelete}>
+              <IconTrash/> Delete
+            </button>
+          )}
         </div>
+      </div>
 
-        <div className="modal-body modal-body--scroll">
-          <div className="form-row">
-            <label className="form-label">Workflow Name</label>
+      {/* Two-column body */}
+      <div className="wf-editor-body">
+
+        {/* Name — full width, row 1 */}
+        <div className="wf-ed-section wf-ed-name-card">
+          <div className="wf-ed-section-hd">
+            <label>Workflow name</label>
+            <span className="ed-hint">A short label, e.g. "NUHS Customer Login"</span>
+          </div>
+          <div className="wf-ed-section-body">
             <input
               autoFocus
-              className={`form-input${nameError ? ' form-input--error' : ''}`}
+              className={`form-input wf-ed-name-input${nameError ? ' form-input--error' : ''}`}
               value={name}
               onChange={e => { setName(e.target.value); setNameError('') }}
-              placeholder="e.g. Login Flow"
+              placeholder="e.g. Download Online Data"
             />
             {nameError && <span className="form-input-error">{nameError}</span>}
           </div>
+        </div>
 
-          {/* Parameters */}
-          <div className="wf-section">
-            <div className="wf-section-header">
-              <span className="wf-section-title">Parameters</span>
-              <button className="btn btn-ghost btn-sm" onClick={addParam}>+ Add</button>
-            </div>
-            {params.length === 0 ? (
-              <p className="wf-hint">Parameters let you customize values at runtime using {'{{name}}'} in step fields.</p>
-            ) : (
-              <div className="wf-param-header">
-                <span>Key name</span><span>Display label</span><span>Default value</span><span>Mask</span><span/>
-              </div>
-            )}
-            {params.map((p, i) => (
-              <div key={i} className="wf-param-row">
-                <input
-                  className="form-input"
-                  value={p.name}
-                  onChange={e => updateParam(i, { name: e.target.value })}
-                  placeholder="username"
-                />
-                <input
-                  className="form-input"
-                  value={p.label}
-                  onChange={e => updateParam(i, { label: e.target.value })}
-                  placeholder="Username"
-                />
-                <input
-                  className="form-input"
-                  value={p.defaultValue ?? ''}
-                  onChange={e => updateParam(i, { defaultValue: e.target.value })}
-                  placeholder="(optional)"
-                />
-                <button
-                  type="button"
-                  className={`toggle-switch wf-param-mask-toggle${p.masked ? ' toggle-switch--on' : ''}`}
-                  onClick={() => updateParam(i, { masked: !p.masked })}
-                  role="switch"
-                  aria-checked={p.masked ?? false}
-                  title={p.masked ? 'Masked — input hidden in UI and debug log' : 'Not masked'}
-                />
-                <button className="btn-icon btn-icon--danger" onClick={() => removeParam(i)}>×</button>
-              </div>
-            ))}
+        {/* Parameters — left column, row 2 */}
+        <div className="wf-ed-section">
+          <div className="wf-ed-section-hd">
+            <label>Parameters</label>
+            <span className="ed-hint">
+              {params.length > 0 ? `${params.length} · ` : ''}
+              use as <code className="ed-code">{'{{key}}'}</code>
+            </span>
+            <button className="btn btn-ghost btn-sm wf-ed-add" onClick={addParam}>
+              <IconPlus/> Add
+            </button>
           </div>
-
-          {/* Steps */}
-          <div className="wf-section">
-            <div className="wf-section-header">
-              <span className="wf-section-title">Steps</span>
-              <button className="btn btn-ghost btn-sm" onClick={addStep}>+ Add Step</button>
-            </div>
-            {steps.length === 0 && (
-              <p className="wf-hint">Steps run in order against the browser context.</p>
-            )}
-            {steps.map((step, i) => (
-              <div key={i} className="wf-step-row">
-                <span className="wf-step-num">{i + 1}</span>
-                <select
-                  className="form-input wf-step-type"
-                  value={step.type}
-                  onChange={e => {
-                    const type = e.target.value as WorkflowStep['type']
-                    updateStep(i, { type, selector: undefined, url: undefined, value: undefined, timeout: undefined })
-                  }}
-                >
-                  {(Object.keys(STEP_LABELS) as WorkflowStep['type'][]).map(t => (
-                    <option key={t} value={t}>{STEP_LABELS[t]}</option>
-                  ))}
-                </select>
-
-                {step.type === 'goto' && (
-                  <input
-                    className="form-input"
-                    value={step.url ?? ''}
-                    onChange={e => updateStep(i, { url: e.target.value })}
-                    placeholder="https://example.com or {{param}}"
-                  />
-                )}
-                {(step.type === 'fill' || step.type === 'click' || step.type === 'wait' || step.type === 'assert') && (
-                  <input
-                    className="form-input"
-                    value={step.selector ?? ''}
-                    onChange={e => updateStep(i, { selector: e.target.value })}
-                    placeholder="CSS selector"
-                  />
-                )}
-                {step.type === 'fill' && (
-                  <input
-                    className="form-input"
-                    value={step.value ?? ''}
-                    onChange={e => updateStep(i, { value: e.target.value })}
-                    placeholder="value or {{param}}"
-                  />
-                )}
-                {step.type === 'waitForText' && (
-                  <input
-                    className="form-input"
-                    value={step.value ?? ''}
-                    onChange={e => updateStep(i, { value: e.target.value })}
-                    placeholder="e.g. order_id= or {{param}}"
-                  />
-                )}
-                {(step.type === 'wait' || step.type === 'assert' || step.type === 'waitForText') && (
-                  <>
-                    {step.timeout !== 0 && (
+          <div className="wf-ed-section-body flush">
+            <div className="wf-ed-params">
+              {params.length === 0 ? (
+                <div className="wf-ed-empty">
+                  <div className="wf-ed-empty-ico">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <path d="M3 6h10M3 10h7"/><circle cx="13" cy="10" r="1.2"/>
+                    </svg>
+                  </div>
+                  <span>No parameters yet</span>
+                  <button className="btn btn-sm" onClick={addParam}><IconPlus/> Add parameter</button>
+                </div>
+              ) : params.map((p, i) => (
+                <div key={i} className="wf-ed-param-card">
+                  <div className="wf-ed-param-card-hd">
+                    <span className="wf-ed-param-num">{i + 1}</span>
+                    <span>Parameter</span>
+                    <button className="wf-ed-param-x" onClick={() => removeParam(i)} title="Remove">
+                      <IconX/>
+                    </button>
+                  </div>
+                  <div className="wf-ed-pair">
+                    <div className="wf-ed-field">
+                      <span className="wf-ed-field-lbl">Key</span>
                       <input
-                        className="form-input wf-step-timeout"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={step.timeout != null ? step.timeout / 1000 : ''}
-                        onChange={e => updateStep(i, { timeout: e.target.value ? Math.round(parseFloat(e.target.value) * 1000) : undefined })}
-                        placeholder={step.type === 'waitForText' ? '30 s' : '10 s'}
+                        className="form-input"
+                        value={p.name}
+                        onChange={e => updateParam(i, { name: e.target.value })}
+                        placeholder="email"
                       />
-                    )}
-                    <button
-                      type="button"
-                      className={`wf-step-infinite${step.timeout === 0 ? ' wf-step-infinite--on' : ''}`}
-                      onClick={() => updateStep(i, { timeout: step.timeout === 0 ? undefined : 0 })}
-                      title={step.timeout === 0 ? 'Infinite wait — click to set a timeout' : 'No timeout limit'}
-                    >∞</button>
-                  </>
-                )}
-                <button className="btn-icon btn-icon--danger" onClick={() => removeStep(i)}>×</button>
-              </div>
-            ))}
+                    </div>
+                    <div className="wf-ed-field">
+                      <span className="wf-ed-field-lbl">Display label</span>
+                      <input
+                        className="form-input"
+                        value={p.label}
+                        onChange={e => updateParam(i, { label: e.target.value })}
+                        placeholder="Email address"
+                      />
+                    </div>
+                  </div>
+                  <div className="wf-ed-field">
+                    <span className="wf-ed-field-lbl">Default value</span>
+                    <input
+                      className="form-input"
+                      value={p.defaultValue ?? ''}
+                      onChange={e => updateParam(i, { defaultValue: e.target.value })}
+                      placeholder="(optional)"
+                    />
+                  </div>
+                  <label className="wf-ed-param-mask">
+                    <span>Mask value (password)</span>
+                    <input
+                      type="checkbox"
+                      className="toggle-switch"
+                      checked={p.masked ?? false}
+                      onChange={e => updateParam(i, { masked: e.target.checked })}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!name.trim()}>
-            Save Workflow
-          </button>
+        {/* Steps — right column, row 2 */}
+        <div className="wf-ed-section">
+          <div className="wf-ed-section-hd">
+            <label>Steps</label>
+            <span className="ed-hint">{steps.length} · run top-to-bottom</span>
+            <button className="btn btn-ghost btn-sm wf-ed-add" onClick={addStep}>
+              <IconPlus/> Add step
+            </button>
+          </div>
+          <div className="wf-ed-section-body flush">
+            <div className="wf-ed-steps">
+              {steps.length === 0 ? (
+                <div className="wf-ed-empty">
+                  <div className="wf-ed-empty-ico"><IconBolt/></div>
+                  <span>No steps yet</span>
+                  <button className="btn btn-sm" onClick={addStep}><IconPlus/> Add first step</button>
+                </div>
+              ) : steps.map((step, i) => (
+                <StepRow
+                  key={i}
+                  step={step}
+                  index={i}
+                  onUpdate={patch => updateStep(i, patch)}
+                  onRemove={() => removeStep(i)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="wf-editor-foot">
+        <div className="wf-editor-foot-left">
+          <span>{params.length} param{params.length === 1 ? '' : 's'}</span>
+          <span>·</span>
+          <span>{steps.length} step{steps.length === 1 ? '' : 's'}</span>
+          <span className="wf-editor-foot-pill">Ctrl Enter to save</span>
+        </div>
+        <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={!canSave}>
+          Save Workflow
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Step row ──────────────────────────────────────────────────────────────────
+
+function StepRow({
+  step, index, onUpdate, onRemove,
+}: {
+  step: WorkflowStep
+  index: number
+  onUpdate: (patch: Partial<WorkflowStep>) => void
+  onRemove: () => void
+}) {
+  const changeType = (type: WorkflowStep['type']) =>
+    onUpdate({ type, selector: undefined, url: undefined, value: undefined, timeout: undefined })
+
+  const renderFields = () => {
+    switch (step.type) {
+      case 'goto':
+        return (
+          <input
+            className="form-input wf-ed-step-single"
+            value={step.url ?? ''}
+            onChange={e => onUpdate({ url: e.target.value })}
+            placeholder="https://example.com or {{param}}"
+          />
+        )
+      case 'click':
+        return (
+          <input
+            className="form-input wf-ed-step-single"
+            value={step.selector ?? ''}
+            onChange={e => onUpdate({ selector: e.target.value })}
+            placeholder="CSS selector, e.g. button[type=submit]"
+          />
+        )
+      case 'assert':
+        return (
+          <input
+            className="form-input wf-ed-step-single"
+            value={step.selector ?? ''}
+            onChange={e => onUpdate({ selector: e.target.value })}
+            placeholder="CSS selector"
+          />
+        )
+      case 'fill':
+        return (
+          <>
+            <input
+              className="form-input"
+              value={step.selector ?? ''}
+              onChange={e => onUpdate({ selector: e.target.value })}
+              placeholder="CSS selector"
+            />
+            <input
+              className="form-input"
+              value={step.value ?? ''}
+              onChange={e => onUpdate({ value: e.target.value })}
+              placeholder="Value or {{param}}"
+            />
+          </>
+        )
+      case 'wait':
+        return (
+          <>
+            <input
+              className="form-input"
+              value={step.selector ?? ''}
+              onChange={e => onUpdate({ selector: e.target.value })}
+              placeholder="CSS selector to wait for"
+            />
+            <TimeoutCell step={step} onUpdate={onUpdate}/>
+          </>
+        )
+      case 'waitForText':
+        return (
+          <>
+            <input
+              className="form-input"
+              value={step.value ?? ''}
+              onChange={e => onUpdate({ value: e.target.value })}
+              placeholder="e.g. order_id= or {{param}}"
+            />
+            <TimeoutCell step={step} onUpdate={onUpdate}/>
+          </>
+        )
+      case 'closeBrowser':
+        return <div className="wf-ed-step-no-fields">— no additional fields required —</div>
+    }
+  }
+
+  return (
+    <div className="wf-ed-step">
+      <div className="wf-ed-step-num">{index + 1}</div>
+      <select
+        className="form-select"
+        value={step.type}
+        onChange={e => changeType(e.target.value as WorkflowStep['type'])}
+      >
+        {(Object.keys(STEP_LABELS) as WorkflowStep['type'][]).map(t => (
+          <option key={t} value={t}>{STEP_LABELS[t]}</option>
+        ))}
+      </select>
+      {renderFields()}
+      <button className="wf-ed-step-x" onClick={onRemove} title="Remove step">
+        <IconX/>
+      </button>
+    </div>
+  )
+}
+
+function TimeoutCell({
+  step, onUpdate,
+}: {
+  step: WorkflowStep
+  onUpdate: (patch: Partial<WorkflowStep>) => void
+}) {
+  return (
+    <div className="wf-ed-timeout-cell">
+      {step.timeout !== 0 && (
+        <input
+          className="form-input"
+          type="number"
+          min="0"
+          step="0.5"
+          value={step.timeout != null ? step.timeout / 1000 : ''}
+          onChange={e =>
+            onUpdate({ timeout: e.target.value ? Math.round(parseFloat(e.target.value) * 1000) : undefined })
+          }
+          placeholder={step.type === 'waitForText' ? '30 s' : '10 s'}
+        />
+      )}
+      <button
+        type="button"
+        className={`wf-step-infinite${step.timeout === 0 ? ' wf-step-infinite--on' : ''}`}
+        onClick={() => onUpdate({ timeout: step.timeout === 0 ? undefined : 0 })}
+        title={step.timeout === 0 ? 'Infinite wait — click to set a timeout' : 'No timeout limit'}
+      >∞</button>
     </div>
   )
 }
