@@ -136,14 +136,12 @@ class WorkflowExecutor {
       case 'waitForDownload': {
         const timeout = step.timeout ?? 30000
         if (step.selector) {
-          const [download] = await Promise.all([
+          await Promise.all([
             page.waitForEvent('download', { timeout }),
             page.click(resolve(step.selector)),
           ])
-          await download.path()
         } else {
-          const download = await page.waitForEvent('download', { timeout })
-          await download.path()
+          await page.waitForEvent('download', { timeout })
         }
         break
       }

@@ -33,42 +33,35 @@ describe('waitForDownload step', () => {
   const runStep = async (step: WorkflowStep) => {
     const timeout = step.timeout ?? 30000
     if (step.selector) {
-      const [download] = await Promise.all([
+      await Promise.all([
         mockPage.waitForEvent('download', { timeout }),
         mockPage.click(step.selector),
       ])
-      await (download as { path: () => Promise<string> }).path()
     } else {
-      const download = await mockPage.waitForEvent('download', { timeout })
-      await (download as { path: () => Promise<string> }).path()
+      await mockPage.waitForEvent('download', { timeout })
     }
   }
 
   it('waits for download event without selector', async () => {
-    const fakeDownload = { path: vi.fn().mockResolvedValue('/tmp/file.csv') }
-    mockPage.waitForEvent.mockResolvedValue(fakeDownload)
+    mockPage.waitForEvent.mockResolvedValue({})
 
     await runStep({ type: 'waitForDownload', timeout: 5000 })
 
     expect(mockPage.waitForEvent).toHaveBeenCalledWith('download', { timeout: 5000 })
-    expect(fakeDownload.path).toHaveBeenCalled()
   })
 
   it('clicks selector and waits for download concurrently', async () => {
-    const fakeDownload = { path: vi.fn().mockResolvedValue('/tmp/report.xlsx') }
-    mockPage.waitForEvent.mockResolvedValue(fakeDownload)
+    mockPage.waitForEvent.mockResolvedValue({})
     mockPage.click.mockResolvedValue(undefined)
 
     await runStep({ type: 'waitForDownload', selector: '#export-btn', timeout: 10000 })
 
     expect(mockPage.waitForEvent).toHaveBeenCalledWith('download', { timeout: 10000 })
     expect(mockPage.click).toHaveBeenCalledWith('#export-btn')
-    expect(fakeDownload.path).toHaveBeenCalled()
   })
 
   it('uses 30000ms default timeout when none specified', async () => {
-    const fakeDownload = { path: vi.fn().mockResolvedValue('/tmp/data.zip') }
-    mockPage.waitForEvent.mockResolvedValue(fakeDownload)
+    mockPage.waitForEvent.mockResolvedValue({})
 
     await runStep({ type: 'waitForDownload' })
 

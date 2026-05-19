@@ -1,5 +1,6 @@
 import { chromium, firefox } from 'playwright'
 import { existsSync } from 'fs'
+import { app } from 'electron'
 import type { Browser, BrowserContext } from 'playwright'
 import type { WebContents } from 'electron'
 import type { ContextBrowserConfig, BrowserType, AvailableBrowsers } from '../../shared/types'
@@ -121,6 +122,16 @@ class BrowserManager {
               width: config.windowSize.width,
               height: config.windowSize.height
             }
+          })
+          // Playwright sets 'allowAndName' which renames downloads to UUIDs.
+          // Get the browserContextId of this isolated context so the override
+          // targets the right context, not the browser's default one.
+          const { targetInfo } = await session.send('Target.getTargetInfo', {})
+          await session.send('Browser.setDownloadBehavior', {
+            behavior: 'allow',
+            browserContextId: targetInfo.browserContextId,
+            downloadPath: app.getPath('downloads'),
+            eventsEnabled: true,
           })
           await session.detach()
         } catch {
