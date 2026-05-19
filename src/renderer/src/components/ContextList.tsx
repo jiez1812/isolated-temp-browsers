@@ -16,6 +16,7 @@ interface Props {
   onSaveParams: (contextId: string, params: Record<string, string>) => void
   onReorder: (newIds: string[]) => void
   onDelete: (id: string) => void
+  onCopy: (id: string) => void
   onAddContext: () => void
   onLaunchAll: () => void
   onCloseAll: () => void
@@ -23,7 +24,7 @@ interface Props {
 
 export default function ContextList({
   contexts, workflows, runningContextIds,
-  onLaunch, onClose, onRunWorkflow, onEdit, onSetWorkflow, onToggleAutoRun, onSaveParams, onReorder, onDelete,
+  onLaunch, onClose, onRunWorkflow, onEdit, onSetWorkflow, onToggleAutoRun, onSaveParams, onReorder, onDelete, onCopy,
   onAddContext, onLaunchAll, onCloseAll
 }: Props) {
   const anyRunning = contexts.some(c => runningContextIds.has(c.id))
@@ -133,6 +134,7 @@ export default function ContextList({
                 onRunWorkflow={(workflowId, params) => onRunWorkflow(ctx.id, workflowId, params)}
                 onSaveParams={params => onSaveParams(ctx.id, params)}
                 onDelete={() => onDelete(ctx.id)}
+                onCopy={() => onCopy(ctx.id)}
               />
             </div>
           ))}

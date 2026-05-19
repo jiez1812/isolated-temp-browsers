@@ -15,6 +15,7 @@ interface Props {
   onRunWorkflow: (workflowId: string, params: Record<string, string>) => void
   onSaveParams: (params: Record<string, string>) => void
   onDelete: () => void
+  onCopy: () => void
 }
 
 function IconBolt({ className }: { className?: string }) {
@@ -52,10 +53,18 @@ function IconEdit() {
     </svg>
   )
 }
+function IconCopy() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="5" width="8" height="8" rx="1.5"/>
+      <path d="M3 11V3h8"/>
+    </svg>
+  )
+}
 
 export default function ContextCard({
   context, workflow, allWorkflows, isRunning,
-  onLaunch, onClose, onEdit, onSetWorkflow, onToggleAutoRun, onRunWorkflow, onSaveParams, onDelete
+  onLaunch, onClose, onEdit, onSetWorkflow, onToggleAutoRun, onRunWorkflow, onSaveParams, onDelete, onCopy
 }: Props) {
   const [paramValues, setParamValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -114,6 +123,13 @@ export default function ContextCard({
               title="Edit browser"
             >
               <IconEdit/>
+            </button>
+            <button
+              className="context-card-edit"
+              onClick={onCopy}
+              title="Duplicate browser"
+            >
+              <IconCopy/>
             </button>
           </div>
           <div style={{ height: 8 }}/>

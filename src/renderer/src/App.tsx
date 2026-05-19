@@ -56,6 +56,7 @@ function App(): React.JSX.Element {
   const [debugLogs, setDebugLogs] = useState<DebugLogEvent[]>([])
   const [showAddContext, setShowAddContext] = useState(false)
   const [editingContext, setEditingContext] = useState<ContextBrowserConfig | null>(null)
+  const [copyingContext, setCopyingContext] = useState<ContextBrowserConfig | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('browsers')
   const [isMini, setIsMini] = useState(false)
   const [availableBrowsers, setAvailableBrowsers] = useState<AvailableBrowsers>({ edge: true, chrome: false, firefox: false })
@@ -320,6 +321,26 @@ function App(): React.JSX.Element {
     await loadContexts()
   }
 
+  const handleCopyContext = (contextId: string) => {
+    const source = allContexts.find(c => c.id === contextId)
+    if (!source) return
+    setCopyingContext({ ...source, id: crypto.randomUUID(), name: '', workflowParams: undefined })
+  }
+
+  const handleSaveCopy = async (config: ContextBrowserConfig) => {
+    await window.api.saveContext(config)
+    if (activeProfile) {
+      const updated: Profile = {
+        ...activeProfile,
+        contextIds: [...new Set([...activeProfile.contextIds, config.id])]
+      }
+      await window.api.saveProfile(updated)
+      await loadProfiles()
+    }
+    await loadContexts()
+    setCopyingContext(null)
+  }
+
   // ── Workflow CRUD ─────────────────────────────────────────────────────────────
 
   const handleSaveWorkflow = async (workflow: Workflow) => {
@@ -448,6 +469,7 @@ function App(): React.JSX.Element {
             onSaveParams={handleSaveParams}
             onReorder={handleReorder}
             onDelete={handleDeleteContext}
+            onCopy={handleCopyContext}
             onAddContext={() => setShowAddContext(true)}
             onLaunchAll={handleLaunchAll}
             onCloseAll={handleCloseAll}
@@ -477,6 +499,16 @@ function App(): React.JSX.Element {
           initialConfig={editingContext}
           onSave={handleSaveEdit}
           onCancel={() => setEditingContext(null)}
+        />
+      )}
+
+      {copyingContext && (
+        <AddContextModal
+          workflows={activeWorkflows}
+          availableBrowsers={availableBrowsers}
+          initialConfig={copyingContext}
+          onSave={handleSaveCopy}
+          onCancel={() => setCopyingContext(null)}
         />
       )}
 
