@@ -818,6 +818,21 @@ body {
   gap: 6px;
   padding: 5px 9px;
   border-bottom: 0.5px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.debug-drawer[data-collapsed="true"] .debug-drawer-hd {
+  border-bottom: none;
+}
+
+.debug-drawer-chevron {
+  color: var(--fg-3);
+  display: flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+.debug-drawer[data-collapsed="true"] .debug-drawer-chevron {
+  transform: rotate(-90deg);
 }
 
 .debug-drawer-title {
@@ -832,7 +847,6 @@ body {
   font: 11px/1 var(--mono);
   color: var(--fg-3);
   margin-left: auto;
-  margin-right: 4px;
 }
 
 .debug-steps {

@@ -93,6 +93,13 @@ function IconEdit() {
     </svg>
   )
 }
+function IconChevron() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 6l4 4 4-4"/>
+    </svg>
+  )
+}
 function IconCopy() {
   return (
     <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -383,6 +390,7 @@ function DebugDrawer({
   workflow: Workflow | undefined
   onClose: () => void
 }) {
+  const [collapsed, setCollapsed] = useState(false)
   const doneCount = state.steps.filter(s => s.status === 'done' || s.status === 'error').length
   const total = state.steps.length
 
@@ -396,30 +404,39 @@ function DebugDrawer({
   }
 
   return (
-    <div className="debug-drawer">
-      <div className="debug-drawer-hd">
+    <div className="debug-drawer" data-collapsed={collapsed}>
+      <div className="debug-drawer-hd" onClick={() => setCollapsed(v => !v)}>
         <span className="debug-drawer-title">Debug Run</span>
         <span className="debug-progress">{doneCount} / {total}</span>
+        <span className="debug-drawer-chevron"><IconChevron/></span>
         {state.finished && (
-          <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose} title="Dismiss">
+          <button
+            className="btn btn-ghost btn-sm btn-icon"
+            onClick={e => { e.stopPropagation(); onClose() }}
+            title="Dismiss"
+          >
             <IconX/>
           </button>
         )}
       </div>
-      <div className="debug-steps">
-        {state.steps.map((step, i) => (
-          <div key={i} className={`debug-step debug-step--${step.status}`}>
-            {stepIcon(step.status)}
-            <span className="debug-step-num">{i + 1}</span>
-            <span className="debug-step-label">{step.label || (workflow?.steps[i] ? `step ${i + 1}` : '')}</span>
-            {step.duration != null && (
-              <span className="debug-step-timing">{step.duration}ms</span>
-            )}
+      {!collapsed && (
+        <>
+          <div className="debug-steps">
+            {state.steps.map((step, i) => (
+              <div key={i} className={`debug-step debug-step--${step.status}`}>
+                {stepIcon(step.status)}
+                <span className="debug-step-num">{i + 1}</span>
+                <span className="debug-step-label">{step.label || (workflow?.steps[i] ? `step ${i + 1}` : '')}</span>
+                {step.duration != null && (
+                  <span className="debug-step-timing">{step.duration}ms</span>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      {state.slowMo > 0 && (
-        <div className="debug-slowmo-badge">slowMo {state.slowMo}ms</div>
+          {state.slowMo > 0 && (
+            <div className="debug-slowmo-badge">slowMo {state.slowMo}ms</div>
+          )}
+        </>
       )}
     </div>
   )
