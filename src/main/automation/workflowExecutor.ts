@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { readdirSync, watch as fsWatch } from 'fs'
+import { readdirSync } from 'fs'
 import type { BrowserContext } from 'playwright'
 import type { Workflow, WorkflowStep } from '../../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
@@ -45,6 +45,14 @@ class WorkflowExecutor {
       const maskedKeys = new Set(
         workflow.params.filter(p => p.masked).map(p => p.name)
       )
+      // Baseline of files in the downloads folder at workflow start.
+      // Files appearing later — even during slowMo delays before waitForDownload
+      // runs — are detectable as new downloads. Each waitForDownload adds the
+      // file it claims to the baseline so the next one sees a fresh delta.
+      let downloadBaseline: Set<string>
+      try { downloadBaseline = new Set(readdirSync(app.getPath('downloads'))) }
+      catch { downloadBaseline = new Set() }
+
       for (let i = 0; i < total; i++) {
         const step = workflow.steps[i]
         const prefix = `[step ${i + 1}/${total}]`
@@ -60,7 +68,7 @@ class WorkflowExecutor {
           break
         }
         try {
-          await this.executeStep(page, step, params)
+          await this.executeStep(page, step, params, downloadBaseline)
           const duration = Date.now() - t0
           onDebugLog?.('info', `${prefix} done (${duration}ms)`)
           onStepEvent?.({ stepIndex: i, total, status: 'done', label, duration })
@@ -111,7 +119,8 @@ class WorkflowExecutor {
   private async executeStep(
     page: import('playwright').Page,
     step: WorkflowStep,
-    params: Record<string, string>
+    params: Record<string, string>,
+    downloadBaseline: Set<string>
   ): Promise<void> {
     const resolve = (val?: string): string => {
       if (!val) return ''
@@ -159,45 +168,27 @@ class WorkflowExecutor {
         const downloadDir = app.getPath('downloads')
         // page.waitForEvent('download') won't fire because browserManager sets
         // Browser.setDownloadBehavior to behavior:'allow' (to preserve filenames),
-        // bypassing Playwright's download interception. Watch the downloads folder
-        // for a new file instead — and ignore in-progress markers (.crdownload for
-        // Chromium, .part for Firefox), since the temp file gets renamed to its
-        // final name only when the download completes.
-        let before: Set<string>
-        try { before = new Set(readdirSync(downloadDir)) } catch { before = new Set() }
-
-        let watcher: ReturnType<typeof fsWatch> | null = null
-        try {
-          const downloadCompleted = new Promise<void>((onResolved, onRejected) => {
-            let settled = false
-            const finish = (err?: Error) => {
-              if (settled) return
-              settled = true
-              clearTimeout(timer)
-              if (err) onRejected(err); else onResolved()
-            }
-            const timer = setTimeout(
-              () => finish(new Error(`waitForDownload: Timeout ${timeout}ms exceeded`)),
-              timeout
-            )
-            try {
-              watcher = fsWatch(downloadDir, (_event, filename) => {
-                if (!filename || before.has(filename)) return
-                if (filename.endsWith('.crdownload') || filename.endsWith('.part')) return
-                finish()
-              })
-            } catch (err) {
-              finish(err instanceof Error ? err : new Error(String(err)))
-            }
-          })
-
-          if (step.selector) {
-            await page.click(resolve(step.selector))
-          }
-          await downloadCompleted
-        } finally {
-          try { watcher?.close() } catch {}
+        // bypassing Playwright's download interception. Poll the downloads folder
+        // against the workflow-wide baseline so files that completed during
+        // slowMo (before this step started) still count as new. In-progress
+        // markers (.crdownload for Chromium, .part for Firefox) are ignored.
+        if (step.selector) {
+          await page.click(resolve(step.selector))
         }
+
+        const isPending = (f: string) => f.endsWith('.crdownload') || f.endsWith('.part')
+        const deadline = Date.now() + timeout
+        let detected: string | undefined
+        while (!detected && Date.now() < deadline) {
+          let entries: string[]
+          try { entries = readdirSync(downloadDir) } catch { entries = [] }
+          detected = entries.find(f => !downloadBaseline.has(f) && !isPending(f))
+          if (!detected) await new Promise(r => setTimeout(r, 250))
+        }
+        if (!detected) {
+          throw new Error(`waitForDownload: Timeout ${timeout}ms exceeded`)
+        }
+        downloadBaseline.add(detected)
         break
       }
     }
