@@ -83,12 +83,31 @@ function IconGrip() {
     </svg>
   )
 }
+function IconCopy() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="5" width="8" height="8" rx="1.5"/>
+      <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/>
+    </svg>
+  )
+}
 
 // ── Workflow list panel ────────────────────────────────────────────────────────
 
 export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
   const [editing, setEditing] = useState<Workflow | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleCopy = (source: Workflow) => {
+    const copy: Workflow = {
+      ...source,
+      id: crypto.randomUUID(),
+      name: `Copy of ${source.name}`,
+      steps: source.steps.map(s => ({ ...s })),
+      params: source.params.map(p => ({ ...p })),
+    }
+    setEditing(copy)
+  }
 
   const deletingWorkflow = workflows.find(w => w.id === deletingId)
 
@@ -142,6 +161,13 @@ export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
                   </div>
                   <div className="wf-list-actions">
                     <button className="btn btn-sm" onClick={() => setEditing(w)}>Edit</button>
+                    <button
+                      className="btn btn-ghost btn-sm btn-icon"
+                      onClick={() => handleCopy(w)}
+                      title="Duplicate workflow"
+                    >
+                      <IconCopy/>
+                    </button>
                     <button
                       className="btn btn-ghost btn-sm btn-icon"
                       onClick={() => setDeletingId(w.id)}

@@ -1,3 +1,5 @@
+import { app } from 'electron'
+import { readdirSync, watch as fsWatch } from 'fs'
 import type { BrowserContext } from 'playwright'
 import type { Workflow, WorkflowStep } from '../../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
@@ -139,13 +141,47 @@ class WorkflowExecutor {
         break
       case 'waitForDownload': {
         const timeout = step.timeout ?? 30000
-        if (step.selector) {
-          await Promise.all([
-            page.waitForEvent('download', { timeout }),
-            page.click(resolve(step.selector)),
-          ])
-        } else {
-          await page.waitForEvent('download', { timeout })
+        const downloadDir = app.getPath('downloads')
+        // page.waitForEvent('download') won't fire because browserManager sets
+        // Browser.setDownloadBehavior to behavior:'allow' (to preserve filenames),
+        // bypassing Playwright's download interception. Watch the downloads folder
+        // for a new file instead — and ignore in-progress markers (.crdownload for
+        // Chromium, .part for Firefox), since the temp file gets renamed to its
+        // final name only when the download completes.
+        let before: Set<string>
+        try { before = new Set(readdirSync(downloadDir)) } catch { before = new Set() }
+
+        let watcher: ReturnType<typeof fsWatch> | null = null
+        try {
+          const downloadCompleted = new Promise<void>((onResolved, onRejected) => {
+            let settled = false
+            const finish = (err?: Error) => {
+              if (settled) return
+              settled = true
+              clearTimeout(timer)
+              if (err) onRejected(err); else onResolved()
+            }
+            const timer = setTimeout(
+              () => finish(new Error(`waitForDownload: Timeout ${timeout}ms exceeded`)),
+              timeout
+            )
+            try {
+              watcher = fsWatch(downloadDir, (_event, filename) => {
+                if (!filename || before.has(filename)) return
+                if (filename.endsWith('.crdownload') || filename.endsWith('.part')) return
+                finish()
+              })
+            } catch (err) {
+              finish(err instanceof Error ? err : new Error(String(err)))
+            }
+          })
+
+          if (step.selector) {
+            await page.click(resolve(step.selector))
+          }
+          await downloadCompleted
+        } finally {
+          try { watcher?.close() } catch {}
         }
         break
       }
