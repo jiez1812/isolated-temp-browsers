@@ -1,5 +1,5 @@
 import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileImportResult } from '../../shared/types'
-import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
+import type { WorkflowStatusEvent, DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
 
 declare global {
   interface Window {
@@ -23,11 +23,13 @@ declare global {
       runWorkflow: (
         contextId: string,
         workflowId: string,
-        params: Record<string, string>
+        params: Record<string, string>,
+        options?: { debug?: boolean; slowMo?: number }
       ) => Promise<void>
 
       onWorkflowStatus: (callback: (event: WorkflowStatusEvent) => void) => () => void
       onDebugLog: (callback: (event: DebugLogEvent) => void) => () => void
+      onWorkflowStep: (callback: (event: WorkflowStepEvent) => void) => () => void
       onContextClosed: (callback: (contextId: string) => void) => () => void
 
       detectBrowsers: () => Promise<AvailableBrowsers>

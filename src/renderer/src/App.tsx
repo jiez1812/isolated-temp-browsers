@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import appIcon from '@images/icon.ico'
 import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileExport } from '../../shared/types'
-import type { DebugLogEvent } from '../../shared/ipc'
+import type { DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
 import ProfileSelector from './components/ProfileSelector'
 import ImportProfileModal from './components/ImportProfileModal'
 import ConfirmModal from './components/ConfirmModal'
@@ -14,6 +14,19 @@ import DebugConsole from './components/DebugConsole'
 import MiniView from './MiniApp'
 
 type Tab = 'browsers' | 'workflows'
+
+export interface DebugStepState {
+  label: string
+  status: 'pending' | 'running' | 'done' | 'error'
+  duration?: number
+}
+
+export interface DebugRunState {
+  workflowId: string
+  slowMo: number
+  steps: DebugStepState[]
+  finished: boolean
+}
 
 // Tiny SVG icons (inline to avoid extra deps)
 function IconExport() {
@@ -54,6 +67,7 @@ function App(): React.JSX.Element {
   const [runningContextIds, setRunningContextIds] = useState<Set<string>>(new Set())
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const [debugLogs, setDebugLogs] = useState<DebugLogEvent[]>([])
+  const [debugStates, setDebugStates] = useState<Map<string, DebugRunState>>(new Map())
   const [showAddContext, setShowAddContext] = useState(false)
   const [editingContext, setEditingContext] = useState<ContextBrowserConfig | null>(null)
   const [copyingContext, setCopyingContext] = useState<ContextBrowserConfig | null>(null)
@@ -103,12 +117,33 @@ function App(): React.JSX.Element {
       const type = event.status === 'success' ? 'success' : event.status === 'error' ? 'error' : 'info'
       const detail = event.message ? `: ${event.message}` : ''
       addToast(type, `[${event.workflowName}] ${event.status}${detail}`)
+      if (event.status === 'success' || event.status === 'error') {
+        setDebugStates(prev => {
+          const cur = prev.get(event.contextId)
+          if (!cur) return prev
+          const next = new Map(prev)
+          next.set(event.contextId, { ...cur, finished: true })
+          return next
+        })
+      }
     })
     const unsubDebug = window.api.onDebugLog(entry => setDebugLogs(prev => [...prev.slice(-499), entry]))
+    const unsubStep = window.api.onWorkflowStep((event: WorkflowStepEvent) => {
+      setDebugStates(prev => {
+        const cur = prev.get(event.contextId)
+        if (!cur) return prev
+        const steps = cur.steps.map((s, i) =>
+          i === event.stepIndex ? { label: event.label, status: event.status, duration: event.duration } : s
+        )
+        const next = new Map(prev)
+        next.set(event.contextId, { ...cur, steps })
+        return next
+      })
+    })
     const unsubClosed = window.api.onContextClosed(contextId => {
       setRunningContextIds(prev => { const s = new Set(prev); s.delete(contextId); return s })
     })
-    return () => { unsubStatus(); unsubDebug(); unsubClosed() }
+    return () => { unsubStatus(); unsubDebug(); unsubStep(); unsubClosed() }
   }, [loadProfiles, loadContexts, loadWorkflows, addToast])
 
   const activeProfile = profiles.find(p => p.id === activeProfileId) ?? null
@@ -250,12 +285,33 @@ function App(): React.JSX.Element {
 
   // ── Workflow execution ────────────────────────────────────────────────────────
 
-  const handleRunWorkflow = async (contextId: string, workflowId: string, params: Record<string, string>) => {
+  const handleRunWorkflow = async (
+    contextId: string,
+    workflowId: string,
+    params: Record<string, string>,
+    debug?: boolean,
+    slowMo?: number
+  ) => {
+    if (debug) {
+      const wf = workflows.find(w => w.id === workflowId)
+      if (wf) {
+        setDebugStates(prev => new Map(prev).set(contextId, {
+          workflowId,
+          slowMo: slowMo ?? 0,
+          steps: wf.steps.map(() => ({ label: '', status: 'pending' })),
+          finished: false,
+        }))
+      }
+    }
     try {
-      await window.api.runWorkflow(contextId, workflowId, params)
+      await window.api.runWorkflow(contextId, workflowId, params, debug ? { debug, slowMo } : undefined)
     } catch (err) {
       addToast('error', `Failed to run workflow: ${err}`)
     }
+  }
+
+  const handleClearDebug = (contextId: string) => {
+    setDebugStates(prev => { const next = new Map(prev); next.delete(contextId); return next })
   }
 
   // ── Context CRUD ──────────────────────────────────────────────────────────────
@@ -460,9 +516,11 @@ function App(): React.JSX.Element {
             contexts={activeContexts}
             workflows={activeWorkflows}
             runningContextIds={runningContextIds}
+            debugStates={debugStates}
             onLaunch={handleLaunch}
             onClose={handleClose}
             onRunWorkflow={handleRunWorkflow}
+            onClearDebug={handleClearDebug}
             onEdit={setEditingContext}
             onSetWorkflow={handleSetWorkflow}
             onToggleAutoRun={handleToggleAutoRun}

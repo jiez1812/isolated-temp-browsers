@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import type { ContextBrowserConfig, Workflow } from '../../../shared/types'
+import type { DebugRunState } from '../App'
 import { reorder } from '../utils/reorder'
 import ContextCard from './ContextCard'
 
@@ -7,9 +8,11 @@ interface Props {
   contexts: ContextBrowserConfig[]
   workflows: Workflow[]
   runningContextIds: Set<string>
+  debugStates: Map<string, DebugRunState>
   onLaunch: (id: string) => void
   onClose: (id: string) => void
-  onRunWorkflow: (contextId: string, workflowId: string, params: Record<string, string>) => void
+  onRunWorkflow: (contextId: string, workflowId: string, params: Record<string, string>, debug?: boolean, slowMo?: number) => void
+  onClearDebug: (contextId: string) => void
   onEdit: (context: ContextBrowserConfig) => void
   onSetWorkflow: (contextId: string, workflowId: string) => void
   onToggleAutoRun: (contextId: string, value: boolean) => void
@@ -23,8 +26,8 @@ interface Props {
 }
 
 export default function ContextList({
-  contexts, workflows, runningContextIds,
-  onLaunch, onClose, onRunWorkflow, onEdit, onSetWorkflow, onToggleAutoRun, onSaveParams, onReorder, onDelete, onCopy,
+  contexts, workflows, runningContextIds, debugStates,
+  onLaunch, onClose, onRunWorkflow, onClearDebug, onEdit, onSetWorkflow, onToggleAutoRun, onSaveParams, onReorder, onDelete, onCopy,
   onAddContext, onLaunchAll, onCloseAll
 }: Props) {
   const anyRunning = contexts.some(c => runningContextIds.has(c.id))
@@ -126,12 +129,14 @@ export default function ContextList({
                 workflow={workflows.find(w => w.id === ctx.workflowId)}
                 allWorkflows={workflows}
                 isRunning={runningContextIds.has(ctx.id)}
+                debugState={debugStates.get(ctx.id)}
                 onLaunch={() => onLaunch(ctx.id)}
                 onClose={() => onClose(ctx.id)}
                 onEdit={() => onEdit(ctx)}
                 onSetWorkflow={workflowId => onSetWorkflow(ctx.id, workflowId)}
                 onToggleAutoRun={value => onToggleAutoRun(ctx.id, value)}
-                onRunWorkflow={(workflowId, params) => onRunWorkflow(ctx.id, workflowId, params)}
+                onRunWorkflow={(workflowId, params, debug, slowMo) => onRunWorkflow(ctx.id, workflowId, params, debug, slowMo)}
+                onClearDebug={() => onClearDebug(ctx.id)}
                 onSaveParams={params => onSaveParams(ctx.id, params)}
                 onDelete={() => onDelete(ctx.id)}
                 onCopy={() => onCopy(ctx.id)}

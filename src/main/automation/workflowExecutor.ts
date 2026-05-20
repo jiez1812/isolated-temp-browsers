@@ -2,10 +2,11 @@ import { app } from 'electron'
 import { readdirSync, watch as fsWatch } from 'fs'
 import type { BrowserContext } from 'playwright'
 import type { Workflow, WorkflowStep } from '../../shared/types'
-import type { WorkflowStatusEvent, DebugLogEvent } from '../../shared/ipc'
+import type { WorkflowStatusEvent, DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
 
 type StatusCallback = (event: WorkflowStatusEvent) => void
 type DebugLogFn = (level: DebugLogEvent['level'], message: string) => void
+type StepEventFn = (event: Omit<WorkflowStepEvent, 'contextId' | 'workflowId'>) => void
 
 class WorkflowExecutor {
   async run(
@@ -14,7 +15,9 @@ class WorkflowExecutor {
     params: Record<string, string>,
     onStatus: StatusCallback,
     contextId = '',
-    onDebugLog?: DebugLogFn
+    onDebugLog?: DebugLogFn,
+    onStepEvent?: StepEventFn,
+    slowMo = 0
   ): Promise<void> {
     let page: import('playwright').Page
     try {
@@ -45,15 +48,27 @@ class WorkflowExecutor {
       for (let i = 0; i < total; i++) {
         const step = workflow.steps[i]
         const prefix = `[step ${i + 1}/${total}]`
-        onDebugLog?.('info', `${prefix} ${this.buildStepLabel(step, params, maskedKeys)}`)
+        const label = this.buildStepLabel(step, params, maskedKeys)
+        onDebugLog?.('info', `${prefix} ${label}`)
+        onStepEvent?.({ stepIndex: i, total, status: 'running', label })
         const t0 = Date.now()
         if (step.type === 'closeBrowser') {
           await context.close()
-          onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
+          const duration = Date.now() - t0
+          onDebugLog?.('info', `${prefix} done (${duration}ms)`)
+          onStepEvent?.({ stepIndex: i, total, status: 'done', label, duration })
           break
         }
-        await this.executeStep(page, step, params)
-        onDebugLog?.('info', `${prefix} done (${Date.now() - t0}ms)`)
+        try {
+          await this.executeStep(page, step, params)
+          const duration = Date.now() - t0
+          onDebugLog?.('info', `${prefix} done (${duration}ms)`)
+          onStepEvent?.({ stepIndex: i, total, status: 'done', label, duration })
+          if (slowMo > 0 && i < total - 1) await page.waitForTimeout(slowMo)
+        } catch (err) {
+          onStepEvent?.({ stepIndex: i, total, status: 'error', label, duration: Date.now() - t0 })
+          throw err
+        }
       }
       onStatus({ contextId, workflowId: workflow.id, workflowName: workflow.name, status: 'success', timestamp: Date.now() })
     } catch (err) {

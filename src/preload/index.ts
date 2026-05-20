@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileImportResult } from '../shared/types'
-import type { WorkflowStatusEvent, DebugLogEvent } from '../shared/ipc'
+import type { WorkflowStatusEvent, DebugLogEvent, WorkflowStepEvent } from '../shared/ipc'
 
 contextBridge.exposeInMainWorld('api', {
   // Context browsers
@@ -28,8 +28,9 @@ contextBridge.exposeInMainWorld('api', {
   runWorkflow: (
     contextId: string,
     workflowId: string,
-    params: Record<string, string>
-  ): Promise<void> => ipcRenderer.invoke(IPC.WORKFLOW_RUN, { contextId, workflowId, params }),
+    params: Record<string, string>,
+    options?: { debug?: boolean; slowMo?: number }
+  ): Promise<void> => ipcRenderer.invoke(IPC.WORKFLOW_RUN, { contextId, workflowId, params, ...options }),
 
   // System
   detectBrowsers: (): Promise<AvailableBrowsers> => ipcRenderer.invoke(IPC.BROWSER_DETECT),
@@ -52,6 +53,12 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_e: Electron.IpcRendererEvent, data: DebugLogEvent): void => callback(data)
     ipcRenderer.on(IPC.DEBUG_LOG, handler)
     return () => ipcRenderer.removeListener(IPC.DEBUG_LOG, handler)
+  },
+
+  onWorkflowStep: (callback: (event: WorkflowStepEvent) => void): (() => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: WorkflowStepEvent): void => callback(data)
+    ipcRenderer.on(IPC.WORKFLOW_STEP, handler)
+    return () => ipcRenderer.removeListener(IPC.WORKFLOW_STEP, handler)
   },
 
   onContextClosed: (callback: (contextId: string) => void): (() => void) => {

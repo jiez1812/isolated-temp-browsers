@@ -755,6 +755,155 @@ body {
 .workflow-none { font-size: 12px; color: var(--fg-3); }
 .workflow-hint { font-size: 11px; color: var(--fg-3); }
 
+/* ── Workflow run split button ── */
+
+.workflow-run-split {
+  display: flex;
+  gap: 4px;
+  position: relative;
+}
+
+/* ── Debug menu popup ── */
+
+.debug-menu-popup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  background: var(--surface-2);
+  border: 0.5px solid var(--border-2);
+  border-radius: 9px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.debug-menu-slowmo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-2);
+}
+.debug-menu-slowmo input[type="range"] {
+  flex: 1;
+  height: 3px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.debug-menu-slowmo-val {
+  font: 11px/1 var(--mono);
+  color: var(--fg-3);
+  min-width: 34px;
+  text-align: right;
+}
+
+/* ── Debug drawer (inside context card) ── */
+
+.debug-drawer {
+  border: 0.5px solid var(--border);
+  border-radius: 9px;
+  background: oklch(0 0 0 / 0.22);
+  overflow: hidden;
+}
+
+.debug-drawer-hd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.debug-drawer-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.debug-progress {
+  font: 11px/1 var(--mono);
+  color: var(--fg-3);
+  margin-left: auto;
+  margin-right: 4px;
+}
+
+.debug-steps {
+  padding: 3px 0;
+}
+
+.debug-step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  font: 11px/1.4 var(--mono);
+}
+
+.debug-step-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.debug-step-num {
+  color: var(--fg-3);
+  min-width: 12px;
+  text-align: right;
+  font-size: 10.5px;
+}
+
+.debug-step-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debug-step-timing {
+  color: var(--fg-3);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+/* Step states */
+.debug-step--pending .debug-step-icon { color: var(--fg-3); }
+.debug-step--pending .debug-step-label { color: var(--fg-3); }
+
+.debug-step--running .debug-step-icon { color: var(--accent); }
+.debug-step--running .debug-step-label { color: var(--fg); }
+
+.debug-step--done .debug-step-icon { color: var(--ok); }
+.debug-step--done .debug-step-label { color: var(--fg-2); }
+
+.debug-step--error .debug-step-icon { color: var(--danger); }
+.debug-step--error .debug-step-label { color: var(--danger); }
+
+@keyframes debug-step-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.debug-step-icon--running {
+  animation: debug-step-pulse 1s ease-in-out infinite;
+}
+
+.debug-slowmo-badge {
+  padding: 4px 9px;
+  border-top: 0.5px solid var(--border);
+  font: 10px/1 var(--mono);
+  color: var(--fg-3);
+}
+
 /* ── Workflow tab list ── */
 
 .wf-list {

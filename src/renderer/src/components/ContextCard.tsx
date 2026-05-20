@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import type { ContextBrowserConfig, Workflow } from '../../../shared/types'
+import type { DebugRunState } from '../App'
 import ConfirmModal from './ConfirmModal'
 
 interface Props {
@@ -7,15 +8,54 @@ interface Props {
   workflow?: Workflow
   allWorkflows: Workflow[]
   isRunning: boolean
+  debugState?: DebugRunState
   onLaunch: () => void
   onClose: () => void
   onEdit: () => void
   onSetWorkflow: (workflowId: string) => void
   onToggleAutoRun: (value: boolean) => void
-  onRunWorkflow: (workflowId: string, params: Record<string, string>) => void
+  onRunWorkflow: (workflowId: string, params: Record<string, string>, debug?: boolean, slowMo?: number) => void
+  onClearDebug: () => void
   onSaveParams: (params: Record<string, string>) => void
   onDelete: () => void
   onCopy: () => void
+}
+
+function IconBug() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 14a5 5 0 0 0 5-5V7a5 5 0 0 0-10 0v2a5 5 0 0 0 5 5z"/>
+      <path d="M3 9H1m14 0h-2M5.5 4.5 4 3M10.5 4.5 12 3M3 12l-2 1M13 12l2 1"/>
+    </svg>
+  )
+}
+function IconStepDone() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8l3.5 3.5L13 5"/>
+    </svg>
+  )
+}
+function IconStepError() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M4 4l8 8M12 4l-8 8"/>
+    </svg>
+  )
+}
+function IconStepPending() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="8" cy="8" r="6"/>
+    </svg>
+  )
+}
+function IconStepRunning() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+      <circle cx="8" cy="8" r="5"/>
+    </svg>
+  )
 }
 
 function IconBolt({ className }: { className?: string }) {
@@ -63,8 +103,8 @@ function IconCopy() {
 }
 
 export default function ContextCard({
-  context, workflow, allWorkflows, isRunning,
-  onLaunch, onClose, onEdit, onSetWorkflow, onToggleAutoRun, onRunWorkflow, onSaveParams, onDelete, onCopy
+  context, workflow, allWorkflows, isRunning, debugState,
+  onLaunch, onClose, onEdit, onSetWorkflow, onToggleAutoRun, onRunWorkflow, onClearDebug, onSaveParams, onDelete, onCopy
 }: Props) {
   const [paramValues, setParamValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
@@ -73,6 +113,9 @@ export default function ContextCard({
   )
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showWorkflowPicker, setShowWorkflowPicker] = useState(false)
+  const [showDebugMenu, setShowDebugMenu] = useState(false)
+  const [debugSlowMo, setDebugSlowMo] = useState(0)
+  const debugMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setParamValues(
@@ -82,8 +125,26 @@ export default function ContextCard({
     )
   }, [workflow?.id, context.workflowParams])
 
+  useEffect(() => {
+    if (!showDebugMenu) return
+    const onClickOutside = (e: MouseEvent) => {
+      if (debugMenuRef.current && !debugMenuRef.current.contains(e.target as Node)) {
+        setShowDebugMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [showDebugMenu])
+
   const handleRunWorkflow = () => {
     if (workflow) onRunWorkflow(workflow.id, paramValues)
+  }
+
+  const handleDebugRun = () => {
+    if (workflow) {
+      setShowDebugMenu(false)
+      onRunWorkflow(workflow.id, paramValues, true, debugSlowMo)
+    }
   }
 
   const cardAccent = context.color ?? 'oklch(0.64 0.17 265)'
@@ -157,6 +218,7 @@ export default function ContextCard({
 
         {/* Workflow section */}
         {workflow ? (
+          <>
           <div className="card-workflow">
             <div className="card-workflow-head">
               <IconBolt className="bolt"/>
@@ -212,16 +274,58 @@ export default function ContextCard({
                 </div>
               ))}
 
-              <button
-                className="btn btn-secondary btn-sm btn-wide"
-                onClick={handleRunWorkflow}
-                disabled={!isRunning}
-                title={isRunning ? undefined : 'Launch browser first'}
-              >
-                Run Workflow
-              </button>
+              <div className="workflow-run-split" ref={debugMenuRef}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1 }}
+                  onClick={handleRunWorkflow}
+                  disabled={!isRunning}
+                  title={isRunning ? undefined : 'Launch browser first'}
+                >
+                  Run
+                </button>
+                <button
+                  className={`btn btn-sm btn-icon${showDebugMenu ? ' btn-secondary' : ' btn-ghost'}`}
+                  onClick={() => setShowDebugMenu(v => !v)}
+                  disabled={!isRunning}
+                  title="Debug run options"
+                >
+                  <IconBug/>
+                </button>
+                {showDebugMenu && (
+                  <div className="debug-menu-popup">
+                    <div className="debug-menu-slowmo">
+                      <span>Slow motion</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={2000}
+                        step={100}
+                        value={debugSlowMo}
+                        onChange={e => setDebugSlowMo(Number(e.target.value))}
+                      />
+                      <span className="debug-menu-slowmo-val">{debugSlowMo}ms</span>
+                    </div>
+                    <button
+                      className="btn btn-secondary btn-sm btn-wide"
+                      onClick={handleDebugRun}
+                    >
+                      <IconBug/> Start Debug Run
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {debugState && (
+            <DebugDrawer
+              state={debugState}
+              workflow={workflow}
+              onClose={onClearDebug}
+            />
+          )}
+        </>
         ) : (
           <div className="card-workflow">
             <div className="card-workflow-body" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -267,5 +371,56 @@ export default function ContextCard({
         />
       )}
     </>
+  )
+}
+
+// ── Debug drawer ──────────────────────────────────────────────────────────────
+
+function DebugDrawer({
+  state, workflow, onClose,
+}: {
+  state: DebugRunState
+  workflow: Workflow | undefined
+  onClose: () => void
+}) {
+  const doneCount = state.steps.filter(s => s.status === 'done' || s.status === 'error').length
+  const total = state.steps.length
+
+  const stepIcon = (status: DebugRunState['steps'][number]['status']) => {
+    switch (status) {
+      case 'done':    return <span className="debug-step-icon debug-step-icon--done"><IconStepDone/></span>
+      case 'error':   return <span className="debug-step-icon debug-step-icon--error"><IconStepError/></span>
+      case 'running': return <span className="debug-step-icon debug-step-icon--running"><IconStepRunning/></span>
+      default:        return <span className="debug-step-icon debug-step-icon--pending"><IconStepPending/></span>
+    }
+  }
+
+  return (
+    <div className="debug-drawer">
+      <div className="debug-drawer-hd">
+        <span className="debug-drawer-title">Debug Run</span>
+        <span className="debug-progress">{doneCount} / {total}</span>
+        {state.finished && (
+          <button className="btn btn-ghost btn-sm btn-icon" onClick={onClose} title="Dismiss">
+            <IconX/>
+          </button>
+        )}
+      </div>
+      <div className="debug-steps">
+        {state.steps.map((step, i) => (
+          <div key={i} className={`debug-step debug-step--${step.status}`}>
+            {stepIcon(step.status)}
+            <span className="debug-step-num">{i + 1}</span>
+            <span className="debug-step-label">{step.label || (workflow?.steps[i] ? `step ${i + 1}` : '')}</span>
+            {step.duration != null && (
+              <span className="debug-step-timing">{step.duration}ms</span>
+            )}
+          </div>
+        ))}
+      </div>
+      {state.slowMo > 0 && (
+        <div className="debug-slowmo-badge">slowMo {state.slowMo}ms</div>
+      )}
+    </div>
   )
 }

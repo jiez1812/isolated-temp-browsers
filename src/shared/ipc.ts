@@ -18,6 +18,7 @@ export const IPC = {
   WINDOW_ENTER_MINI: 'window:enter-mini',
   WINDOW_EXIT_MINI: 'window:exit-mini',
   DEBUG_LOG: 'debug:log',
+  WORKFLOW_STEP: 'workflow:step',
   CONTEXT_CLOSED: 'context:closed',
   BROWSER_DETECT: 'browser:detect',
   PROFILE_EXPORT: 'profile:export',
@@ -39,4 +40,14 @@ export interface DebugLogEvent {
   level: 'info' | 'warn' | 'error'
   message: string
   timestamp: number
+}
+
+export interface WorkflowStepEvent {
+  contextId: string
+  workflowId: string
+  stepIndex: number
+  total: number
+  status: 'running' | 'done' | 'error'
+  label: string
+  duration?: number
 }
