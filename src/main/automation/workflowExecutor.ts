@@ -79,7 +79,8 @@ class WorkflowExecutor {
     switch (step.type) {
       case 'goto':   return `goto  ${resolve(step.url)}`
       case 'fill':   return `fill  ${step.selector}  →  "${resolve(step.value)}"`
-      case 'click':  return `click  ${step.selector}`
+      case 'click':        return `click  ${step.selector}`
+      case 'selectOption': return `selectOption  ${step.selector}  →  "${resolve(step.value)}"`
       case 'wait':   return `wait  ${step.selector}  (${step.timeout ?? 10000}ms)`
       case 'assert':      return `assert  ${step.selector}  visible`
       case 'waitForText':   return `waitForText  "${resolve(step.value)}"  (${step.timeout ?? 30000}ms)`
@@ -109,6 +110,9 @@ class WorkflowExecutor {
         break
       case 'click':
         await page.click(resolve(step.selector))
+        break
+      case 'selectOption':
+        await page.selectOption(resolve(step.selector), resolve(step.value))
         break
       case 'wait':
         await page.waitForSelector(resolve(step.selector), {

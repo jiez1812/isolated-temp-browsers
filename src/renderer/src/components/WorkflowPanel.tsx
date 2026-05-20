@@ -12,6 +12,7 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   goto:         'Go to URL',
   fill:         'Fill input',
   click:        'Click',
+  selectOption: 'Select option',
   wait:         'Wait for element',
   assert:       'Assert visible',
   waitForText:  'Wait for text in URL',
@@ -22,7 +23,7 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
 
 const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
   { label: 'Navigation',  types: ['goto'] },
-  { label: 'Interaction', types: ['fill', 'click'] },
+  { label: 'Interaction', types: ['fill', 'click', 'selectOption'] },
   { label: 'Assertions',  types: ['assert', 'wait', 'waitForText'] },
   { label: 'Timing',      types: ['waitSeconds'] },
   { label: 'Files',       types: ['waitForDownload'] },
@@ -504,6 +505,23 @@ function StepRow({
               value={step.value ?? ''}
               onChange={e => onUpdate({ value: e.target.value })}
               placeholder="Value or {{param}}"
+            />
+          </>
+        )
+      case 'selectOption':
+        return (
+          <>
+            <input
+              className="form-input"
+              value={step.selector ?? ''}
+              onChange={e => onUpdate({ selector: e.target.value })}
+              placeholder="CSS selector, e.g. select#country"
+            />
+            <input
+              className="form-input"
+              value={step.value ?? ''}
+              onChange={e => onUpdate({ value: e.target.value })}
+              placeholder="Option value or {{param}}"
             />
           </>
         )
