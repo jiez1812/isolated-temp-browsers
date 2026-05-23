@@ -9,7 +9,8 @@
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dist:win": "electron-vite build && electron-builder --win --publish never"
+    "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "dist:win:publish": "electron-vite build && electron-builder --win --publish always"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
