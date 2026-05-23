@@ -12,10 +12,20 @@ import {
   FaTrashAlt as IconTrash,
 } from 'react-icons/fa'
 import type { Workflow, WorkflowStep, WorkflowParam } from '../../../shared/types'
+import {
+  DEFAULT_WORKFLOW_RETRY_COUNT,
+  DEFAULT_WORKFLOW_RETRY_DELAY,
+} from '../../../shared/settings'
 import ConfirmModal from './ConfirmModal'
+
+export interface WorkflowRetryDefaults {
+  retryCount: number
+  retryDelay: number
+}
 
 interface Props {
   workflows: Workflow[]
+  retryDefaults: WorkflowRetryDefaults
   onSave: (workflow: Workflow) => void
   onDelete: (id: string) => void
 }
@@ -60,12 +70,16 @@ export function normalizeRetryDelayInput(value: string): number | undefined {
 
 export function buildWorkflowRetryTogglePatch(
   enabled: boolean,
-  current: Pick<Workflow, 'retryCount' | 'retryDelay'>
+  current: Pick<Workflow, 'retryCount' | 'retryDelay'>,
+  defaults: WorkflowRetryDefaults = {
+    retryCount: DEFAULT_WORKFLOW_RETRY_COUNT,
+    retryDelay: DEFAULT_WORKFLOW_RETRY_DELAY,
+  }
 ): Pick<Workflow, 'retryCount' | 'retryDelay'> {
   if (!enabled) return { retryCount: undefined, retryDelay: undefined }
   return {
-    retryCount: normalizeRetryInput(String(current.retryCount ?? '')) ?? 1,
-    retryDelay: current.retryDelay,
+    retryCount: normalizeRetryInput(String(current.retryCount ?? '')) ?? defaults.retryCount,
+    retryDelay: current.retryDelay ?? defaults.retryDelay,
   }
 }
 
@@ -87,7 +101,7 @@ export function buildStepTypePatch(type: WorkflowStep['type']): Partial<Workflow
 
 // ── Workflow list panel ────────────────────────────────────────────────────────
 
-export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
+export default function WorkflowPanel({ workflows, retryDefaults, onSave, onDelete }: Props) {
   const [editing, setEditing] = useState<Workflow | 'new' | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -113,6 +127,7 @@ export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
       <WorkflowEditor
         workflow={workflow}
         existingNames={existingNames}
+        retryDefaults={retryDefaults}
         onSave={w => { onSave(w); setEditing(null) }}
         onCancel={() => setEditing(null)}
         onDelete={workflow ? () => { onDelete(workflow.id); setEditing(null) } : undefined}
@@ -194,12 +209,14 @@ export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
 function WorkflowEditor({
   workflow,
   existingNames,
+  retryDefaults,
   onSave,
   onCancel,
   onDelete,
 }: {
   workflow: Workflow | null
   existingNames: string[]
+  retryDefaults: WorkflowRetryDefaults
   onSave: (w: Workflow) => void
   onCancel: () => void
   onDelete?: () => void
@@ -289,7 +306,7 @@ function WorkflowEditor({
   const handleDelete = () => setShowDeleteConfirm(true)
 
   const toggleRetry = (enabled: boolean) => {
-    const patch = buildWorkflowRetryTogglePatch(enabled, { retryCount, retryDelay })
+    const patch = buildWorkflowRetryTogglePatch(enabled, { retryCount, retryDelay }, retryDefaults)
     setRetryCount(patch.retryCount)
     setRetryDelay(patch.retryDelay)
   }

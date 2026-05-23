@@ -90,6 +90,8 @@ describe('settingsStore', () => {
       defaultDataRoot: 'C:\\AppData',
       customDataRoot: null,
       debugConsoleOpenByDefault: true,
+      defaultRetryCount: 2,
+      defaultRetryDelay: 500,
     })
   })
 
@@ -97,12 +99,28 @@ describe('settingsStore', () => {
     settingsStore.save({
       customDataRoot: 'D:\\ProfileData',
       debugConsoleOpenByDefault: false,
+      defaultRetryCount: 4,
+      defaultRetryDelay: 1250,
     })
 
     expect(settingsStore.load()).toMatchObject({
       dataRoot: 'D:\\ProfileData',
       customDataRoot: 'D:\\ProfileData',
       debugConsoleOpenByDefault: false,
+      defaultRetryCount: 4,
+      defaultRetryDelay: 1250,
+    })
+  })
+
+  it('normalizes retry defaults when saving', () => {
+    settingsStore.save({
+      defaultRetryCount: 99,
+      defaultRetryDelay: 1250.7,
+    })
+
+    expect(settingsStore.load()).toMatchObject({
+      defaultRetryCount: 10,
+      defaultRetryDelay: 1251,
     })
   })
 

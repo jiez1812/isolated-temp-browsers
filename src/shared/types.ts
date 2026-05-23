@@ -95,11 +95,15 @@ export interface AppSettings {
   defaultDataRoot: string
   customDataRoot: string | null
   debugConsoleOpenByDefault: boolean
+  defaultRetryCount: number
+  defaultRetryDelay: number
 }
 
 export interface AppSettingsPatch {
   customDataRoot?: string | null
   debugConsoleOpenByDefault?: boolean
+  defaultRetryCount?: number
+  defaultRetryDelay?: number
 }
 
 export interface AppInfo {

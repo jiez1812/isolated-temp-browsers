@@ -4,6 +4,7 @@ import {
   FaFolderOpen as IconFolder,
 } from 'react-icons/fa'
 import type { AppInfo, AppSettings } from '../../../shared/types'
+import { MAX_WORKFLOW_RETRY_COUNT } from '../../../shared/settings'
 import { isUsingDefaultDataRoot } from '../utils/settingsView'
 
 interface Props {
@@ -69,6 +70,40 @@ export default function SettingsPage({
       onSettingsChanged(next)
     } catch (err) {
       onNotify('error', `Failed to save setting: ${err}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDefaultRetryCountChange = async (value: string) => {
+    const parsed = Number(value)
+    const defaultRetryCount = Number.isFinite(parsed)
+      ? Math.min(MAX_WORKFLOW_RETRY_COUNT, Math.max(0, Math.floor(parsed)))
+      : 0
+
+    setBusy(true)
+    try {
+      const next = await window.api.saveSettings({ defaultRetryCount })
+      onSettingsChanged(next)
+    } catch (err) {
+      onNotify('error', `Failed to save retry count: ${err}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleDefaultRetryDelayChange = async (value: string) => {
+    const parsed = Number(value)
+    const defaultRetryDelay = Number.isFinite(parsed)
+      ? Math.max(0, Math.round(parsed * 1000))
+      : 0
+
+    setBusy(true)
+    try {
+      const next = await window.api.saveSettings({ defaultRetryDelay })
+      onSettingsChanged(next)
+    } catch (err) {
+      onNotify('error', `Failed to save retry time: ${err}`)
     } finally {
       setBusy(false)
     }
@@ -157,6 +192,45 @@ export default function SettingsPage({
               disabled={busy}
             />
           </label>
+        </section>
+
+        <section className="settings-section">
+          <div className="settings-row">
+            <div className="settings-row-main">
+              <span className="settings-label">Workflow retry defaults</span>
+              <span className="settings-hint">
+                Used when Retry is enabled on a workflow that has no saved retry values.
+              </span>
+            </div>
+            <div className="settings-actions">
+              <label className="settings-number-field">
+                <span>Retries</span>
+                <input
+                  className="form-input settings-number-input"
+                  type="number"
+                  min="0"
+                  max={MAX_WORKFLOW_RETRY_COUNT}
+                  step="1"
+                  value={settings.defaultRetryCount}
+                  onChange={e => handleDefaultRetryCountChange(e.target.value)}
+                  disabled={busy}
+                />
+              </label>
+              <label className="settings-number-field">
+                <span>Time</span>
+                <input
+                  className="form-input settings-number-input"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={settings.defaultRetryDelay / 1000}
+                  onChange={e => handleDefaultRetryDelayChange(e.target.value)}
+                  disabled={busy}
+                />
+                <span className="settings-number-unit">s</span>
+              </label>
+            </div>
+          </div>
         </section>
       </div>
     </div>

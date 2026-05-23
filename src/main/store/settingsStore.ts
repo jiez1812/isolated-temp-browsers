@@ -2,10 +2,17 @@ import { app } from 'electron'
 import { basename, isAbsolute, join, relative, resolve } from 'path'
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs'
 import type { AppSettings, AppSettingsPatch } from '../../shared/types'
+import {
+  DEFAULT_WORKFLOW_RETRY_COUNT,
+  DEFAULT_WORKFLOW_RETRY_DELAY,
+  MAX_WORKFLOW_RETRY_COUNT,
+} from '../../shared/settings'
 
 interface PersistedSettings {
   customDataRoot?: string | null
   debugConsoleOpenByDefault?: boolean
+  defaultRetryCount?: number
+  defaultRetryDelay?: number
 }
 
 export const APP_DATA_DIR_NAMES = ['profiles', 'contexts', 'workflows'] as const
@@ -50,6 +57,16 @@ function isPathInside(child: string, parent: string): boolean {
   return !!rel && !rel.startsWith('..') && !isAbsolute(rel)
 }
 
+function normalizeRetryCount(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_WORKFLOW_RETRY_COUNT
+  return Math.min(MAX_WORKFLOW_RETRY_COUNT, Math.max(0, Math.floor(value)))
+}
+
+function normalizeRetryDelay(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_WORKFLOW_RETRY_DELAY
+  return Math.max(0, Math.round(value))
+}
+
 function hydrate(persisted: PersistedSettings): AppSettings {
   const fallbackRoot = defaultDataRoot()
   const customDataRoot = persisted.customDataRoot?.trim()
@@ -62,6 +79,8 @@ function hydrate(persisted: PersistedSettings): AppSettings {
     customDataRoot,
     debugConsoleOpenByDefault:
       persisted.debugConsoleOpenByDefault ?? DEFAULT_DEBUG_CONSOLE_OPEN,
+    defaultRetryCount: normalizeRetryCount(persisted.defaultRetryCount),
+    defaultRetryDelay: normalizeRetryDelay(persisted.defaultRetryDelay),
   }
 }
 
@@ -135,6 +154,14 @@ export const settingsStore = {
 
     if ('debugConsoleOpenByDefault' in patch) {
       next.debugConsoleOpenByDefault = patch.debugConsoleOpenByDefault
+    }
+
+    if ('defaultRetryCount' in patch) {
+      next.defaultRetryCount = normalizeRetryCount(patch.defaultRetryCount)
+    }
+
+    if ('defaultRetryDelay' in patch) {
+      next.defaultRetryDelay = normalizeRetryDelay(patch.defaultRetryDelay)
     }
 
     writePersisted(next)

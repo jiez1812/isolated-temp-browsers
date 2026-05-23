@@ -38,15 +38,15 @@ describe('WorkflowPanel retry controls', () => {
     })
   })
 
-  it('sets a default retry count when the workflow retry toggle is enabled', () => {
-    expect(buildWorkflowRetryTogglePatch(true, {})).toEqual({
-      retryCount: 1,
-      retryDelay: undefined,
+  it('sets configured defaults when the workflow retry toggle is enabled', () => {
+    expect(buildWorkflowRetryTogglePatch(true, {}, { retryCount: 2, retryDelay: 500 })).toEqual({
+      retryCount: 2,
+      retryDelay: 500,
     })
   })
 
   it('preserves existing workflow retry values when the toggle is enabled', () => {
-    expect(buildWorkflowRetryTogglePatch(true, { retryCount: 3, retryDelay: 750 })).toEqual({
+    expect(buildWorkflowRetryTogglePatch(true, { retryCount: 3, retryDelay: 750 }, { retryCount: 2, retryDelay: 500 })).toEqual({
       retryCount: 3,
       retryDelay: 750,
     })

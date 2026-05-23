@@ -16,6 +16,10 @@ import type {
   ProfileExport,
 } from '../../shared/types'
 import type { DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
+import {
+  DEFAULT_WORKFLOW_RETRY_COUNT,
+  DEFAULT_WORKFLOW_RETRY_DELAY,
+} from '../../shared/settings'
 import ProfileSelector from './components/ProfileSelector'
 import ImportProfileModal from './components/ImportProfileModal'
 import ConfirmModal from './components/ConfirmModal'
@@ -581,6 +585,10 @@ function App(): React.JSX.Element {
         ) : (
           <WorkflowPanel
             workflows={activeWorkflows}
+            retryDefaults={{
+              retryCount: appSettings?.defaultRetryCount ?? DEFAULT_WORKFLOW_RETRY_COUNT,
+              retryDelay: appSettings?.defaultRetryDelay ?? DEFAULT_WORKFLOW_RETRY_DELAY,
+            }}
             onSave={handleSaveWorkflow}
             onDelete={handleDeleteWorkflow}
           />

@@ -12,6 +12,8 @@ const makeSettings = (overrides: Partial<AppSettings> = {}): AppSettings => ({
   defaultDataRoot: 'C:\\AppData',
   customDataRoot: null,
   debugConsoleOpenByDefault: true,
+  defaultRetryCount: 2,
+  defaultRetryDelay: 500,
   ...overrides,
 })
 
