@@ -40,6 +40,7 @@ describe('WorkflowPanel retry controls', () => {
 
   it('sets configured defaults when the workflow retry toggle is enabled', () => {
     expect(buildWorkflowRetryTogglePatch(true, {}, { retryCount: 2, retryDelay: 500 })).toEqual({
+      retryEnabled: true,
       retryCount: 2,
       retryDelay: 500,
     })
@@ -47,15 +48,25 @@ describe('WorkflowPanel retry controls', () => {
 
   it('preserves existing workflow retry values when the toggle is enabled', () => {
     expect(buildWorkflowRetryTogglePatch(true, { retryCount: 3, retryDelay: 750 }, { retryCount: 2, retryDelay: 500 })).toEqual({
+      retryEnabled: true,
       retryCount: 3,
       retryDelay: 750,
     })
   })
 
-  it('clears workflow retry fields when the toggle is disabled', () => {
-    expect(buildWorkflowRetryTogglePatch(false, { retryCount: 3, retryDelay: 750 })).toEqual({
-      retryCount: undefined,
-      retryDelay: undefined,
+  it('preserves workflow retry values when the toggle is disabled', () => {
+    expect(buildWorkflowRetryTogglePatch(false, { retryCount: 3, retryDelay: 750 }, { retryCount: 2, retryDelay: 500 })).toEqual({
+      retryEnabled: false,
+      retryCount: 3,
+      retryDelay: 750,
+    })
+  })
+
+  it('records defaults when disabling a workflow that has no saved retry values', () => {
+    expect(buildWorkflowRetryTogglePatch(false, {}, { retryCount: 2, retryDelay: 500 })).toEqual({
+      retryEnabled: false,
+      retryCount: 2,
+      retryDelay: 500,
     })
   })
 

@@ -75,9 +75,9 @@ export function buildWorkflowRetryTogglePatch(
     retryCount: DEFAULT_WORKFLOW_RETRY_COUNT,
     retryDelay: DEFAULT_WORKFLOW_RETRY_DELAY,
   }
-): Pick<Workflow, 'retryCount' | 'retryDelay'> {
-  if (!enabled) return { retryCount: undefined, retryDelay: undefined }
+): Pick<Workflow, 'retryEnabled' | 'retryCount' | 'retryDelay'> {
   return {
+    retryEnabled: enabled,
     retryCount: normalizeRetryInput(String(current.retryCount ?? '')) ?? defaults.retryCount,
     retryDelay: current.retryDelay ?? defaults.retryDelay,
   }
@@ -228,11 +228,17 @@ function WorkflowEditor({
   const [steps, setSteps] = useState<WorkflowStep[]>(
     workflow?.steps ?? [{ type: 'goto', url: '' }]
   )
-  const [retryCount, setRetryCount] = useState<number | undefined>(workflow?.retryCount)
-  const [retryDelay, setRetryDelay] = useState<number | undefined>(workflow?.retryDelay)
+  const [retryEnabled, setRetryEnabled] = useState(
+    workflow?.retryEnabled ?? ((workflow?.retryCount ?? 0) > 0)
+  )
+  const [retryCount, setRetryCount] = useState<number | undefined>(
+    workflow?.retryCount ?? retryDefaults.retryCount
+  )
+  const [retryDelay, setRetryDelay] = useState<number | undefined>(
+    workflow?.retryDelay ?? retryDefaults.retryDelay
+  )
 
   const canSave = name.trim() !== '' && steps.length > 0
-  const retryEnabled = (retryCount ?? 0) > 0
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim()
@@ -241,16 +247,18 @@ function WorkflowEditor({
       setNameError('A workflow with this name already exists')
       return
     }
-    const normalizedRetryCount = retryCount ? normalizeRetryInput(String(retryCount)) : undefined
+    const normalizedRetryCount = normalizeRetryInput(String(retryCount ?? '')) ?? retryDefaults.retryCount
+    const normalizedRetryDelay = retryDelay ?? retryDefaults.retryDelay
     onSave({
       id: workflow?.id ?? crypto.randomUUID(),
       name: trimmed,
       params,
       steps: stripStepRetryFields(steps),
+      retryEnabled,
       retryCount: normalizedRetryCount,
-      retryDelay: normalizedRetryCount ? retryDelay : undefined,
+      retryDelay: normalizedRetryDelay,
     })
-  }, [name, existingNames, workflow, params, steps, retryCount, retryDelay, onSave])
+  }, [name, existingNames, workflow, params, steps, retryEnabled, retryCount, retryDelay, retryDefaults, onSave])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -284,14 +292,16 @@ function WorkflowEditor({
     })
 
   const handleExport = () => {
-    const normalizedRetryCount = retryCount ? normalizeRetryInput(String(retryCount)) : undefined
+    const normalizedRetryCount = normalizeRetryInput(String(retryCount ?? '')) ?? retryDefaults.retryCount
+    const normalizedRetryDelay = retryDelay ?? retryDefaults.retryDelay
     const blob = new Blob(
       [JSON.stringify({
         name,
         params,
         steps: stripStepRetryFields(steps),
+        retryEnabled,
         retryCount: normalizedRetryCount,
-        retryDelay: normalizedRetryCount ? retryDelay : undefined,
+        retryDelay: normalizedRetryDelay,
       }, null, 2)],
       { type: 'application/json' }
     )
@@ -307,6 +317,7 @@ function WorkflowEditor({
 
   const toggleRetry = (enabled: boolean) => {
     const patch = buildWorkflowRetryTogglePatch(enabled, { retryCount, retryDelay }, retryDefaults)
+    setRetryEnabled(patch.retryEnabled ?? false)
     setRetryCount(patch.retryCount)
     setRetryDelay(patch.retryDelay)
   }
@@ -464,7 +475,6 @@ function WorkflowEditor({
                 onChange={e => {
                   const next = normalizeRetryInput(e.target.value)
                   setRetryCount(next)
-                  if (!next) setRetryDelay(undefined)
                 }}
                 placeholder="Retries"
                 title="Extra retries after each failed retryable step"

@@ -37,6 +37,10 @@ export function isRetryableStep(step: WorkflowStep, workflowRetryEnabled = false
   return RETRYABLE_STEP_TYPES.has(step.type)
 }
 
+export function isWorkflowRetryEnabled(workflow: Workflow): boolean {
+  return workflow.retryEnabled ?? normalizeRetryCount(workflow) > 0
+}
+
 class WorkflowExecutor {
   async run(
     workflow: Workflow,
@@ -148,8 +152,9 @@ class WorkflowExecutor {
   }
 
   private getRetryPolicy(workflow: Workflow, step: WorkflowStep): { retryCount: number; retryDelay: number } {
+    if (workflow.retryEnabled === false) return { retryCount: 0, retryDelay: DEFAULT_RETRY_DELAY }
     const workflowRetryCount = normalizeRetryCount(workflow)
-    if (workflowRetryCount > 0 && isRetryableStep(step, true)) {
+    if (isWorkflowRetryEnabled(workflow) && workflowRetryCount > 0 && isRetryableStep(step, true)) {
       return { retryCount: workflowRetryCount, retryDelay: normalizeRetryDelay(workflow) }
     }
     if (!isRetryableStep(step)) return { retryCount: 0, retryDelay: DEFAULT_RETRY_DELAY }

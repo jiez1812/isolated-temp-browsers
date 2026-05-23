@@ -244,6 +244,7 @@ function App(): React.JSX.Element {
           name: wf.name,
           steps: wf.steps,
           params: wf.params,
+          ...(wf.retryEnabled != null && { retryEnabled: wf.retryEnabled }),
           ...(wf.retryCount != null && { retryCount: wf.retryCount }),
           ...(wf.retryDelay != null && { retryDelay: wf.retryDelay }),
         }

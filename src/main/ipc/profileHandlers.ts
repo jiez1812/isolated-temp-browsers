@@ -61,6 +61,7 @@ export function registerProfileHandlers(ipcMain: IpcMain): void {
         name: w.name,
         steps: w.steps,
         params: w.params,
+        ...(w.retryEnabled != null && { retryEnabled: w.retryEnabled }),
         ...(w.retryCount != null && { retryCount: w.retryCount }),
         ...(w.retryDelay != null && { retryDelay: w.retryDelay }),
       }))

@@ -20,6 +20,7 @@ export interface Workflow {
   name: string
   steps: WorkflowStep[]
   params: WorkflowParam[]
+  retryEnabled?: boolean
   retryCount?: number
   retryDelay?: number
 }
@@ -72,6 +73,7 @@ export interface ProfileExportWorkflow {
   name: string
   steps: WorkflowStep[]
   params: WorkflowParam[]
+  retryEnabled?: boolean
   retryCount?: number
   retryDelay?: number
 }

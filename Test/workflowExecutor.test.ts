@@ -213,6 +213,26 @@ describe('workflowExecutor retry policy', () => {
     expect(page.click).toHaveBeenCalledTimes(2)
   })
 
+  it('does not apply stored workflow retry values when retry is disabled', async () => {
+    const page = makePage()
+    page.click.mockRejectedValue(new Error('disabled'))
+
+    await expect(
+      workflowExecutor.run(
+        makeWorkflow([{ type: 'click', selector: '#submit', retryCount: 5, retryDelay: 0 }], {
+          retryEnabled: false,
+          retryCount: 2,
+          retryDelay: 0,
+        }),
+        makeContext(page) as any,
+        {},
+        vi.fn()
+      )
+    ).rejects.toThrow('disabled')
+
+    expect(page.click).toHaveBeenCalledTimes(1)
+  })
+
   it('ignores workflow-level retry for waitSeconds', async () => {
     const page = makePage()
     page.waitForTimeout.mockRejectedValueOnce(new Error('timer failed'))
