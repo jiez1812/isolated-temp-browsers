@@ -1,4 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
+import {
+  FaBolt as IconBolt,
+  FaBug as IconBug,
+  FaCheck as IconStepDone,
+  FaChevronDown as IconChevron,
+  FaCircle as IconStepRunning,
+  FaCopy as IconCopy,
+  FaEdit as IconEdit,
+  FaPlay as IconPlay,
+  FaRegCircle as IconStepPending,
+  FaStop as IconStop,
+  FaTimes as IconStepError,
+  FaTimes as IconX,
+} from 'react-icons/fa'
 import type { ContextBrowserConfig, Workflow } from '../../../shared/types'
 import type { DebugRunState } from '../App'
 import ConfirmModal from './ConfirmModal'
@@ -19,94 +33,6 @@ interface Props {
   onSaveParams: (params: Record<string, string>) => void
   onDelete: () => void
   onCopy: () => void
-}
-
-function IconBug() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 14a5 5 0 0 0 5-5V7a5 5 0 0 0-10 0v2a5 5 0 0 0 5 5z"/>
-      <path d="M3 9H1m14 0h-2M5.5 4.5 4 3M10.5 4.5 12 3M3 12l-2 1M13 12l2 1"/>
-    </svg>
-  )
-}
-function IconStepDone() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 8l3.5 3.5L13 5"/>
-    </svg>
-  )
-}
-function IconStepError() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M4 4l8 8M12 4l-8 8"/>
-    </svg>
-  )
-}
-function IconStepPending() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <circle cx="8" cy="8" r="6"/>
-    </svg>
-  )
-}
-function IconStepRunning() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
-      <circle cx="8" cy="8" r="5"/>
-    </svg>
-  )
-}
-
-function IconBolt({ className }: { className?: string }) {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" className={className}>
-      <path d="M9 1L3 9h4l-1 6 6-8H8l1-6z"/>
-    </svg>
-  )
-}
-function IconX() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M4 4l8 8M12 4l-8 8"/>
-    </svg>
-  )
-}
-function IconPlay() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M4 3l9 5-9 5V3z"/>
-    </svg>
-  )
-}
-function IconStop() {
-  return (
-    <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor">
-      <rect x="3" y="3" width="10" height="10" rx="1.5"/>
-    </svg>
-  )
-}
-function IconEdit() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 2l3 3-8 8H3v-3l8-8z"/>
-    </svg>
-  )
-}
-function IconChevron() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 6l4 4 4-4"/>
-    </svg>
-  )
-}
-function IconCopy() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="5" width="8" height="8" rx="1.5"/>
-      <path d="M3 11V3h8"/>
-    </svg>
-  )
 }
 
 export default function ContextCard({

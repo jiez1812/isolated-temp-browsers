@@ -1229,7 +1229,7 @@ body {
   padding: 0 28px 0 10px;
   font: 12.5px/1 var(--font);
   color: var(--fg);
-  background: oklch(0 0 0 / 0.25) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%2399a' stroke-width='1.5' stroke-linecap='round'><path d='M2.5 4l2.5 2.5L7.5 4'/></svg>") no-repeat right 8px center;
+  background: oklch(0 0 0 / 0.25);
   border: 0.5px solid var(--border);
   border-radius: 7px;
   outline: none;
@@ -1240,6 +1240,20 @@ body {
   transition: border-color 0.12s;
 }
 .form-select:focus { border-color: var(--accent); }
+
+.form-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.form-select-icon {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-3);
+  pointer-events: none;
+}
 
 /* Native <option> elements — Chromium/Electron allows basic styling */
 select option {

@@ -1,4 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import {
+  FaFileExport as IconExport,
+  FaMagic as IconWand,
+  FaThLarge as IconGrid,
+  FaTrashAlt as IconTrash,
+} from 'react-icons/fa'
 import appIcon from '@images/icon.ico'
 import type {
   AppInfo,
@@ -41,37 +47,6 @@ export interface DebugRunState {
   slowMo: number
   steps: DebugStepState[]
   finished: boolean
-}
-
-// Tiny SVG icons (inline to avoid extra deps)
-function IconExport() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 11v2h10v-2M8 2v8M5 6l3-4 3 4"/>
-    </svg>
-  )
-}
-function IconTrash() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <path d="M3 5h10M6 5V3h4v2M5 5l.7 8h4.6l.7-8"/>
-    </svg>
-  )
-}
-function IconGrid() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
-      <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
-    </svg>
-  )
-}
-function IconWand() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 13l7-7M9 3l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/>
-    </svg>
-  )
 }
 
 function App(): React.JSX.Element {

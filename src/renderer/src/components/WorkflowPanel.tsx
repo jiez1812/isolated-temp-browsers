@@ -1,4 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import {
+  FaArrowLeft as IconBack,
+  FaBolt as IconBolt,
+  FaChevronDown,
+  FaCopy as IconCopy,
+  FaFileExport as IconExport,
+  FaGripVertical as IconGrip,
+  FaPlus as IconPlus,
+  FaSlidersH,
+  FaTimes as IconX,
+  FaTrashAlt as IconTrash,
+} from 'react-icons/fa'
 import type { Workflow, WorkflowStep, WorkflowParam } from '../../../shared/types'
 import ConfirmModal from './ConfirmModal'
 
@@ -29,68 +41,6 @@ const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
   { label: 'Files',       types: ['waitForDownload'] },
   { label: 'Control',     types: ['closeBrowser'] },
 ]
-
-// ── Icons ──────────────────────────────────────────────────────────────────────
-
-function IconBack() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M13 8H3m0 0l4-4m-4 4l4 4"/>
-    </svg>
-  )
-}
-function IconPlus() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M8 3v10M3 8h10"/>
-    </svg>
-  )
-}
-function IconX() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M4 4l8 8M12 4l-8 8"/>
-    </svg>
-  )
-}
-function IconBolt() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M9 1L3 9h4l-1 6 6-8H8l1-6z"/>
-    </svg>
-  )
-}
-function IconTrash() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 4.5h10M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4.5 4.5L5 13a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-8.5"/>
-    </svg>
-  )
-}
-function IconExport() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10"/>
-    </svg>
-  )
-}
-function IconGrip() {
-  return (
-    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-      <circle cx="3" cy="2" r="1.2"/><circle cx="7" cy="2" r="1.2"/>
-      <circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/>
-      <circle cx="3" cy="12" r="1.2"/><circle cx="7" cy="12" r="1.2"/>
-    </svg>
-  )
-}
-function IconCopy() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="5" width="8" height="8" rx="1.5"/>
-      <path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/>
-    </svg>
-  )
-}
 
 // ── Workflow list panel ────────────────────────────────────────────────────────
 
@@ -347,9 +297,7 @@ function WorkflowEditor({
               {params.length === 0 ? (
                 <div className="wf-ed-empty">
                   <div className="wf-ed-empty-ico">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                      <path d="M3 6h10M3 10h7"/><circle cx="13" cy="10" r="1.2"/>
-                    </svg>
+                    <FaSlidersH size={16}/>
                   </div>
                   <span>No parameters yet</span>
                   <button className="btn btn-sm" onClick={addParam}><IconPlus/> Add parameter</button>
@@ -619,19 +567,22 @@ function StepRow({
     >
       <div className="wf-ed-step-handle" title="Drag to reorder"><IconGrip/></div>
       <div className="wf-ed-step-num">{index + 1}</div>
-      <select
-        className="form-select"
-        value={step.type}
-        onChange={e => changeType(e.target.value as WorkflowStep['type'])}
-      >
-        {STEP_GROUPS.map(g => (
-          <optgroup key={g.label} label={g.label}>
-            {g.types.map(t => (
-              <option key={t} value={t}>{STEP_LABELS[t]}</option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
+      <div className="form-select-wrap">
+        <select
+          className="form-select"
+          value={step.type}
+          onChange={e => changeType(e.target.value as WorkflowStep['type'])}
+        >
+          {STEP_GROUPS.map(g => (
+            <optgroup key={g.label} label={g.label}>
+              {g.types.map(t => (
+                <option key={t} value={t}>{STEP_LABELS[t]}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <FaChevronDown className="form-select-icon" size={10}/>
+      </div>
       {renderFields()}
       <button className="wf-ed-step-x" onClick={onRemove} title="Remove step">
         <IconX/>

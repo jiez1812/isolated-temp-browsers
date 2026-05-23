@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { FaChevronDown } from 'react-icons/fa'
 import type { DebugLogEvent } from '../../../shared/ipc'
 
 interface Props {
@@ -75,9 +76,7 @@ export default function DebugConsole({ logs, onClear, open, onOpenChange }: Prop
             </button>
           )}
           <button className="btn btn-ghost btn-sm btn-icon" onClick={() => onOpenChange(!open)} title={open ? 'Collapse' : 'Expand'}>
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
-              <path d="M4 6l4 4 4-4"/>
-            </svg>
+            <FaChevronDown size={11} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}/>
           </button>
         </div>
       </div>

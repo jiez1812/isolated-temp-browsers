@@ -1,4 +1,10 @@
 import { useState, type ReactElement } from 'react'
+import {
+  FaChevronDown as IconChev,
+  FaPlay as IconPlay,
+  FaWindowMaximize as IconBrowser,
+  FaWindowRestore as IconRestore,
+} from 'react-icons/fa'
 import type { ContextBrowserConfig, Profile } from '../../shared/types'
 
 interface Props {
@@ -10,37 +16,6 @@ interface Props {
   onToggle: (ctx: ContextBrowserConfig) => void
   onLaunchAll: () => void
   onRestore: () => void
-}
-
-function IconRestore() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 6V2h4"/><path d="M12 8v4H8"/>
-      <path d="M2 2l4.5 4.5"/><path d="M12 12L7.5 7.5"/>
-    </svg>
-  )
-}
-function IconBrowser() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-      <rect x="2" y="3" width="12" height="10" rx="1.5"/>
-      <path d="M2 6h12"/>
-    </svg>
-  )
-}
-function IconChev() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M3 5l3 3 3-3"/>
-    </svg>
-  )
-}
-function IconPlay() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-      <path d="M2 1.5v7l6-3.5z"/>
-    </svg>
-  )
 }
 
 export default function MiniView({

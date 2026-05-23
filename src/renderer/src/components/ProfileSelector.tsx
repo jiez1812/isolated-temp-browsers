@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { FaChevronDown as IconChev } from 'react-icons/fa'
 import type { Profile } from '../../../shared/types'
 
 interface Props {
@@ -7,14 +8,6 @@ interface Props {
   onSelect: (id: string | null) => void
   onCreate: (name: string) => void
   onImport: () => void
-}
-
-function IconChev() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-      <path d="M3 5l3 3 3-3"/>
-    </svg>
-  )
 }
 
 export default function ProfileSelector({ profiles, activeProfileId, onSelect, onCreate, onImport }: Props) {

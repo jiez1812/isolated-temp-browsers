@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import {
+  FaArrowLeft as IconBack,
+  FaFolderOpen as IconFolder,
+} from 'react-icons/fa'
 import type { AppInfo, AppSettings } from '../../../shared/types'
 import { isUsingDefaultDataRoot } from '../utils/settingsView'
 
@@ -8,22 +12,6 @@ interface Props {
   onBack: () => void
   onSettingsChanged: (settings: AppSettings) => void
   onNotify: (type: 'success' | 'error' | 'info', message: string) => void
-}
-
-function IconBack() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 3L5 8l5 5"/>
-    </svg>
-  )
-}
-
-function IconFolder() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 5.5V13h12V6.5H7.5L6 4H2z"/>
-    </svg>
-  )
 }
 
 export default function SettingsPage({
