@@ -10,6 +10,7 @@ const fsFiles: Record<string, string> = {}
 vi.mock('fs', () => ({
   existsSync: (p: string) => Object.prototype.hasOwnProperty.call(fsFiles, p),
   mkdirSync: vi.fn(),
+  cpSync: vi.fn(),
   readdirSync: (dir: string) =>
     Object.keys(fsFiles)
       .filter(p => p.startsWith(dir + '\\') || p.startsWith(dir + '/'))
@@ -41,6 +42,7 @@ vi.mock('electron', () => ({
 // Import stores AFTER mocks are in place.
 import { contextStore } from '../src/main/store/contextStore'
 import { profileStore } from '../src/main/store/profileStore'
+import { settingsStore } from '../src/main/store/settingsStore'
 import { workflowStore } from '../src/main/store/workflowStore'
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -126,6 +128,12 @@ describe('contextStore', () => {
     contextStore.save(makeContext({ name: 'After' }))
     expect(contextStore.load('ctx-1')?.name).toBe('After')
   })
+
+  it('uses the configured app data root', () => {
+    settingsStore.save({ customDataRoot: 'D:\\ProfileData' })
+    contextStore.save(makeContext())
+    expect(fsFiles['D:\\ProfileData\\contexts\\ctx-1.json']).toBeDefined()
+  })
 })
 
 // ── profileStore ───────────────────────────────────────────────────────────────
@@ -186,6 +194,12 @@ describe('profileStore', () => {
     profileStore.save(makeProfile({ name: 'Before' }))
     profileStore.save(makeProfile({ name: 'After' }))
     expect(profileStore.load('prof-1')?.name).toBe('After')
+  })
+
+  it('uses the configured app data root', () => {
+    settingsStore.save({ customDataRoot: 'D:\\ProfileData' })
+    profileStore.save(makeProfile())
+    expect(fsFiles['D:\\ProfileData\\profiles\\prof-1.json']).toBeDefined()
   })
 })
 
@@ -252,5 +266,11 @@ describe('workflowStore', () => {
     })
     workflowStore.save(wf)
     expect(workflowStore.load('wf-1')).toEqual(wf)
+  })
+
+  it('uses the configured app data root', () => {
+    settingsStore.save({ customDataRoot: 'D:\\ProfileData' })
+    workflowStore.save(makeWorkflow())
+    expect(fsFiles['D:\\ProfileData\\workflows\\wf-1.json']).toBeDefined()
   })
 })

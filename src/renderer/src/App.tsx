@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import appIcon from '@images/icon.ico'
-import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileExport } from '../../shared/types'
+import type {
+  AppInfo,
+  AppSettings,
+  ContextBrowserConfig,
+  Profile,
+  Workflow,
+  AvailableBrowsers,
+  ProfileExport,
+} from '../../shared/types'
 import type { DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
 import ProfileSelector from './components/ProfileSelector'
 import ImportProfileModal from './components/ImportProfileModal'
@@ -8,10 +16,17 @@ import ConfirmModal from './components/ConfirmModal'
 import ContextList from './components/ContextList'
 import AddContextModal from './components/AddContextModal'
 import WorkflowPanel from './components/WorkflowPanel'
+import SettingsPage from './components/SettingsPage'
 import ToastContainer, { type ToastItem } from './components/Toast'
 import WindowControls from './components/WindowControls'
 import DebugConsole from './components/DebugConsole'
 import MiniView from './MiniApp'
+import {
+  closeSettingsView,
+  debugConsoleOpenFromSettings,
+  openSettingsView,
+  type AppView,
+} from './utils/settingsView'
 
 type Tab = 'browsers' | 'workflows'
 
@@ -68,6 +83,10 @@ function App(): React.JSX.Element {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const [debugLogs, setDebugLogs] = useState<DebugLogEvent[]>([])
   const [debugStates, setDebugStates] = useState<Map<string, DebugRunState>>(new Map())
+  const [appSettings, setAppSettings] = useState<AppSettings | null>(null)
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null)
+  const [activeView, setActiveView] = useState<AppView>('main')
+  const [debugConsoleOpen, setDebugConsoleOpen] = useState(true)
   const [showAddContext, setShowAddContext] = useState(false)
   const [editingContext, setEditingContext] = useState<ContextBrowserConfig | null>(null)
   const [copyingContext, setCopyingContext] = useState<ContextBrowserConfig | null>(null)
@@ -86,17 +105,50 @@ function App(): React.JSX.Element {
   const loadProfiles = useCallback(async () => {
     const list = await window.api.listProfiles()
     setProfiles(list)
+    return list
   }, [])
 
   const loadContexts = useCallback(async () => {
     const list = await window.api.listContexts()
     setAllContexts(list)
+    return list
   }, [])
 
   const loadWorkflows = useCallback(async () => {
     const list = await window.api.listWorkflows()
     setWorkflows(list)
+    return list
   }, [])
+
+  const loadAppSettings = useCallback(async () => {
+    const [settings, info] = await Promise.all([
+      window.api.loadSettings(),
+      window.api.getAppInfo(),
+    ])
+    setAppSettings(settings)
+    setAppInfo(info)
+    setDebugConsoleOpen(debugConsoleOpenFromSettings(settings))
+  }, [])
+
+  const reloadProfileData = useCallback(async () => {
+    const [profileList, contextList, workflowList] = await Promise.all([
+      window.api.listProfiles(),
+      window.api.listContexts(),
+      window.api.listWorkflows(),
+    ])
+    setProfiles(profileList)
+    setAllContexts(contextList)
+    setWorkflows(workflowList)
+    setActiveProfileId(prev =>
+      prev && profileList.some(profile => profile.id === prev) ? prev : null
+    )
+  }, [])
+
+  const handleSettingsChanged = useCallback((settings: AppSettings) => {
+    setAppSettings(settings)
+    setDebugConsoleOpen(debugConsoleOpenFromSettings(settings))
+    void reloadProfileData()
+  }, [reloadProfileData])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -111,6 +163,7 @@ function App(): React.JSX.Element {
     loadProfiles()
     loadContexts()
     loadWorkflows()
+    loadAppSettings()
     window.api.detectBrowsers().then(setAvailableBrowsers)
 
     const unsubStatus = window.api.onWorkflowStatus(event => {
@@ -144,7 +197,7 @@ function App(): React.JSX.Element {
       setRunningContextIds(prev => { const s = new Set(prev); s.delete(contextId); return s })
     })
     return () => { unsubStatus(); unsubDebug(); unsubStep(); unsubClosed() }
-  }, [loadProfiles, loadContexts, loadWorkflows, addToast])
+  }, [loadProfiles, loadContexts, loadWorkflows, loadAppSettings, addToast])
 
   const activeProfile = profiles.find(p => p.id === activeProfileId) ?? null
   const activeContexts = activeProfile
@@ -469,11 +522,14 @@ function App(): React.JSX.Element {
 
         <div className="app-title-spacer"/>
 
-        <WindowControls onMini={handleEnterMini}/>
+        <WindowControls
+          onSettings={() => setActiveView(openSettingsView())}
+          onMini={handleEnterMini}
+        />
       </div>
 
       {/* Tab bar */}
-      {activeProfileId && (
+      {activeView === 'main' && activeProfileId && (
         <div className="app-tabs">
           <button
             className={`app-tab${activeTab === 'browsers' ? ' active' : ''}`}
@@ -507,7 +563,15 @@ function App(): React.JSX.Element {
 
       {/* Body */}
       <div className="app-body">
-        {!activeProfileId ? (
+        {activeView === 'settings' ? (
+          <SettingsPage
+            settings={appSettings}
+            appInfo={appInfo}
+            onBack={() => setActiveView(closeSettingsView())}
+            onSettingsChanged={handleSettingsChanged}
+            onNotify={addToast}
+          />
+        ) : !activeProfileId ? (
           <div className="empty-state">
             <p>Select or create a profile to get started.</p>
           </div>
@@ -541,7 +605,7 @@ function App(): React.JSX.Element {
         )}
       </div>
 
-      {showAddContext && (
+      {activeView === 'main' && showAddContext && (
         <AddContextModal
           workflows={activeWorkflows}
           availableBrowsers={availableBrowsers}
@@ -550,7 +614,7 @@ function App(): React.JSX.Element {
         />
       )}
 
-      {editingContext && (
+      {activeView === 'main' && editingContext && (
         <AddContextModal
           workflows={activeWorkflows}
           availableBrowsers={availableBrowsers}
@@ -560,7 +624,7 @@ function App(): React.JSX.Element {
         />
       )}
 
-      {copyingContext && (
+      {activeView === 'main' && copyingContext && (
         <AddContextModal
           workflows={activeWorkflows}
           availableBrowsers={availableBrowsers}
@@ -570,7 +634,7 @@ function App(): React.JSX.Element {
         />
       )}
 
-      {pendingImport && (
+      {activeView === 'main' && pendingImport && (
         <ImportProfileModal
           data={pendingImport.data}
           conflictingName={pendingImport.conflictName}
@@ -581,7 +645,7 @@ function App(): React.JSX.Element {
         />
       )}
 
-      {confirmingDeleteProfile && activeProfile && (
+      {activeView === 'main' && confirmingDeleteProfile && activeProfile && (
         <ConfirmModal
           title="Delete Profile"
           message={`Delete "${activeProfile.name}"? This cannot be undone.`}
@@ -591,7 +655,12 @@ function App(): React.JSX.Element {
         />
       )}
 
-      <DebugConsole logs={debugLogs} onClear={() => setDebugLogs([])} />
+      <DebugConsole
+        logs={debugLogs}
+        onClear={() => setDebugLogs([])}
+        open={debugConsoleOpen}
+        onOpenChange={setDebugConsoleOpen}
+      />
       <ToastContainer toasts={toasts} />
     </div>
   )

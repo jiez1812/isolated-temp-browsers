@@ -387,6 +387,130 @@ body {
   background-clip: content-box;
 }
 
+/* ── Settings view ── */
+
+.settings-page {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.settings-header h1 {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--fg);
+  line-height: 1.2;
+}
+
+.settings-header p {
+  margin-top: 4px;
+  color: var(--fg-3);
+  font-size: 12.5px;
+}
+
+.settings-back {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.settings-back:hover { background: var(--bg-raised); color: var(--fg); border-color: var(--border-2); }
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 0.5px solid var(--border);
+}
+
+.settings-section {
+  border-bottom: 0.5px solid var(--border);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 78px;
+  padding: 16px 2px;
+}
+
+.settings-row--toggle {
+  cursor: pointer;
+}
+
+.settings-row-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.settings-value {
+  font: 12.5px/1 var(--mono);
+  color: var(--fg-2);
+}
+
+.settings-path {
+  width: 100%;
+  max-width: 620px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: oklch(0 0 0 / 0.24);
+  border: 0.5px solid var(--border);
+  color: var(--fg-2);
+  font: 11.5px/1.4 var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-hint {
+  font-size: 11.5px;
+  color: var(--fg-3);
+  line-height: 1.35;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .settings-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .settings-actions { justify-content: flex-start; }
+}
+
 /* ── Content row / headings ── */
 
 .content-row {

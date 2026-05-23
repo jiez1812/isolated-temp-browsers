@@ -1,6 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileImportResult } from '../shared/types'
+import type {
+  AppInfo,
+  AppSettings,
+  AppSettingsPatch,
+  ContextBrowserConfig,
+  DataRootChangeResult,
+  Profile,
+  Workflow,
+  AvailableBrowsers,
+  ProfileImportResult,
+} from '../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent, WorkflowStepEvent } from '../shared/ipc'
 
 contextBridge.exposeInMainWorld('api', {
@@ -34,6 +44,14 @@ contextBridge.exposeInMainWorld('api', {
 
   // System
   detectBrowsers: (): Promise<AvailableBrowsers> => ipcRenderer.invoke(IPC.BROWSER_DETECT),
+  loadSettings: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.SETTINGS_LOAD),
+  saveSettings: (patch: AppSettingsPatch): Promise<AppSettings> =>
+    ipcRenderer.invoke(IPC.SETTINGS_SAVE, patch),
+  chooseDataRoot: (): Promise<DataRootChangeResult> =>
+    ipcRenderer.invoke(IPC.SETTINGS_CHOOSE_DATA_ROOT),
+  resetDataRoot: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.SETTINGS_RESET_DATA_ROOT),
+  openDataRoot: (): Promise<void> => ipcRenderer.invoke(IPC.SETTINGS_OPEN_DATA_ROOT),
+  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC.APP_INFO),
 
   // Window controls
   minimizeWindow: (): void => ipcRenderer.send(IPC.WINDOW_MINIMIZE),

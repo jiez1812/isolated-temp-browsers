@@ -23,6 +23,12 @@ export const IPC = {
   BROWSER_DETECT: 'browser:detect',
   PROFILE_EXPORT: 'profile:export',
   PROFILE_IMPORT: 'profile:import',
+  SETTINGS_LOAD: 'settings:load',
+  SETTINGS_SAVE: 'settings:save',
+  SETTINGS_CHOOSE_DATA_ROOT: 'settings:choose-data-root',
+  SETTINGS_RESET_DATA_ROOT: 'settings:reset-data-root',
+  SETTINGS_OPEN_DATA_ROOT: 'settings:open-data-root',
+  APP_INFO: 'app:info',
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

@@ -1,11 +1,11 @@
-import { app } from 'electron'
 import { join, basename } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { readdir, readFile } from 'fs/promises'
 import type { Workflow } from '../../shared/types'
+import { settingsStore } from './settingsStore'
 
 const dir = (): string => {
-  const d = join(app.getPath('userData'), 'workflows')
+  const d = settingsStore.getDataDir('workflows')
   if (!existsSync(d)) mkdirSync(d, { recursive: true })
   return d
 }

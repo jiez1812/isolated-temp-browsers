@@ -4,6 +4,8 @@ import type { DebugLogEvent } from '../../../shared/ipc'
 interface Props {
   logs: DebugLogEvent[]
   onClear: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 type LevelFilter = 'all' | 'info' | 'warn' | 'error'
@@ -16,8 +18,7 @@ function formatTime(ts: number): string {
   return `${hh}:${mm}:${ss}`
 }
 
-export default function DebugConsole({ logs, onClear }: Props): React.JSX.Element {
-  const [open, setOpen] = useState(true)
+export default function DebugConsole({ logs, onClear, open, onOpenChange }: Props): React.JSX.Element {
   const [filterLevel, setFilterLevel] = useState<LevelFilter>('all')
   const [filterText, setFilterText] = useState('')
   const bodyRef = useRef<HTMLDivElement>(null)
@@ -38,7 +39,7 @@ export default function DebugConsole({ logs, onClear }: Props): React.JSX.Elemen
   return (
     <div className="debug-console" style={{ height: open ? 160 : 30 }}>
       {/* Header bar */}
-      <div className="debug-console-header" onClick={() => setOpen(o => !o)}>
+      <div className="debug-console-header" onClick={() => onOpenChange(!open)}>
         <span className="debug-console-title">
           Debug Console
           {badgeLabel && <span className="debug-console-badge">{badgeLabel}</span>}
@@ -73,7 +74,7 @@ export default function DebugConsole({ logs, onClear }: Props): React.JSX.Elemen
               Clear
             </button>
           )}
-          <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setOpen(o => !o)} title={open ? 'Collapse' : 'Expand'}>
+          <button className="btn btn-ghost btn-sm btn-icon" onClick={() => onOpenChange(!open)} title={open ? 'Collapse' : 'Expand'}>
             <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
               <path d="M4 6l4 4 4-4"/>
             </svg>

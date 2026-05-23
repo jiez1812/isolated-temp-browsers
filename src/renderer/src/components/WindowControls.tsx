@@ -1,7 +1,17 @@
 import { useState } from 'react'
 
 interface Props {
+  onSettings: () => void
   onMini: () => void
+}
+
+function IconSettings() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="2.1"/>
+      <path d="M8 1.8v2M8 12.2v2M3.6 3.6L5 5M11 11l1.4 1.4M1.8 8h2M12.2 8h2M3.6 12.4L5 11M11 5l1.4-1.4"/>
+    </svg>
+  )
 }
 
 function IconPin() {
@@ -20,7 +30,7 @@ function IconMini() {
   )
 }
 
-export default function WindowControls({ onMini }: Props) {
+export default function WindowControls({ onSettings, onMini }: Props) {
   const [pinned, setPinned] = useState(false)
 
   const handleTogglePin = async () => {
@@ -30,6 +40,10 @@ export default function WindowControls({ onMini }: Props) {
 
   return (
     <>
+      <button className="app-pin-btn" onClick={onSettings} title="Open settings">
+        <IconSettings/> Settings
+      </button>
+
       <button
         className={`app-pin-btn${pinned ? ' active' : ''}`}
         onClick={handleTogglePin}

@@ -1,4 +1,14 @@
-import type { ContextBrowserConfig, Profile, Workflow, AvailableBrowsers, ProfileImportResult } from '../../shared/types'
+import type {
+  AppInfo,
+  AppSettings,
+  AppSettingsPatch,
+  ContextBrowserConfig,
+  DataRootChangeResult,
+  Profile,
+  Workflow,
+  AvailableBrowsers,
+  ProfileImportResult,
+} from '../../shared/types'
 import type { WorkflowStatusEvent, DebugLogEvent, WorkflowStepEvent } from '../../shared/ipc'
 
 declare global {
@@ -33,6 +43,12 @@ declare global {
       onContextClosed: (callback: (contextId: string) => void) => () => void
 
       detectBrowsers: () => Promise<AvailableBrowsers>
+      loadSettings: () => Promise<AppSettings>
+      saveSettings: (patch: AppSettingsPatch) => Promise<AppSettings>
+      chooseDataRoot: () => Promise<DataRootChangeResult>
+      resetDataRoot: () => Promise<AppSettings>
+      openDataRoot: () => Promise<void>
+      getAppInfo: () => Promise<AppInfo>
 
       minimizeWindow: () => void
       toggleAlwaysOnTop: () => Promise<boolean>

@@ -83,3 +83,24 @@ export type ProfileImportResult =
   | { status: 'ok'; data: ProfileExport }
   | { status: 'cancelled' }
   | { status: 'error'; message: string }
+
+export interface AppSettings {
+  dataRoot: string
+  defaultDataRoot: string
+  customDataRoot: string | null
+  debugConsoleOpenByDefault: boolean
+}
+
+export interface AppSettingsPatch {
+  customDataRoot?: string | null
+  debugConsoleOpenByDefault?: boolean
+}
+
+export interface AppInfo {
+  version: string
+}
+
+export type DataRootChangeResult =
+  | { status: 'ok'; settings: AppSettings }
+  | { status: 'cancelled' }
+  | { status: 'error'; message: string }

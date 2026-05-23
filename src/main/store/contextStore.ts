@@ -1,11 +1,11 @@
-import { app } from 'electron'
 import { join, basename } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs'
 import { readdir, readFile } from 'fs/promises'
 import type { ContextBrowserConfig } from '../../shared/types'
+import { settingsStore } from './settingsStore'
 
 const dir = (): string => {
-  const d = join(app.getPath('userData'), 'contexts')
+  const d = settingsStore.getDataDir('contexts')
   if (!existsSync(d)) mkdirSync(d, { recursive: true })
   return d
 }
