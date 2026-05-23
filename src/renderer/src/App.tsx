@@ -235,7 +235,14 @@ function App(): React.JSX.Element {
       for (const wf of data.profile.workflows ?? []) {
         const id = crypto.randomUUID()
         workflowNameToId.set(wf.name, id)
-        const workflow: import('../../shared/types').Workflow = { id, name: wf.name, steps: wf.steps, params: wf.params }
+        const workflow: import('../../shared/types').Workflow = {
+          id,
+          name: wf.name,
+          steps: wf.steps,
+          params: wf.params,
+          ...(wf.retryCount != null && { retryCount: wf.retryCount }),
+          ...(wf.retryDelay != null && { retryDelay: wf.retryDelay }),
+        }
         await window.api.saveWorkflow(workflow)
       }
 

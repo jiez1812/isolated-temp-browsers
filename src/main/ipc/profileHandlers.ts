@@ -57,7 +57,13 @@ export function registerProfileHandlers(ipcMain: IpcMain): void {
     const workflows: ProfileExportWorkflow[] = (profile.workflowIds ?? [])
       .map(wid => workflowStore.load(wid))
       .filter((w): w is Workflow => w != null)
-      .map(w => ({ name: w.name, steps: w.steps, params: w.params }))
+      .map(w => ({
+        name: w.name,
+        steps: w.steps,
+        params: w.params,
+        ...(w.retryCount != null && { retryCount: w.retryCount }),
+        ...(w.retryDelay != null && { retryDelay: w.retryDelay }),
+      }))
 
     const exportData: ProfileExport = {
       version: '1.0',

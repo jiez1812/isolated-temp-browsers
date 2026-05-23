@@ -42,6 +42,49 @@ const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
   { label: 'Control',     types: ['closeBrowser'] },
 ]
 
+export function normalizeRetryInput(value: string): number | undefined {
+  if (value.trim() === '') return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return undefined
+  const normalized = Math.min(10, Math.max(0, Math.floor(parsed)))
+  return normalized > 0 ? normalized : undefined
+}
+
+export function normalizeRetryDelayInput(value: string): number | undefined {
+  if (value.trim() === '') return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return undefined
+  const milliseconds = Math.max(0, Math.round(parsed * 1000))
+  return milliseconds > 0 ? milliseconds : undefined
+}
+
+export function buildWorkflowRetryTogglePatch(
+  enabled: boolean,
+  current: Pick<Workflow, 'retryCount' | 'retryDelay'>
+): Pick<Workflow, 'retryCount' | 'retryDelay'> {
+  if (!enabled) return { retryCount: undefined, retryDelay: undefined }
+  return {
+    retryCount: normalizeRetryInput(String(current.retryCount ?? '')) ?? 1,
+    retryDelay: current.retryDelay,
+  }
+}
+
+export function stripStepRetryFields(steps: WorkflowStep[]): WorkflowStep[] {
+  return steps.map(({ retryCount: _retryCount, retryDelay: _retryDelay, ...step }) => step as WorkflowStep)
+}
+
+export function buildStepTypePatch(type: WorkflowStep['type']): Partial<WorkflowStep> {
+  return {
+    type,
+    selector: undefined,
+    url: undefined,
+    value: undefined,
+    timeout: undefined,
+    retryCount: undefined,
+    retryDelay: undefined,
+  }
+}
+
 // ── Workflow list panel ────────────────────────────────────────────────────────
 
 export default function WorkflowPanel({ workflows, onSave, onDelete }: Props) {
@@ -168,8 +211,11 @@ function WorkflowEditor({
   const [steps, setSteps] = useState<WorkflowStep[]>(
     workflow?.steps ?? [{ type: 'goto', url: '' }]
   )
+  const [retryCount, setRetryCount] = useState<number | undefined>(workflow?.retryCount)
+  const [retryDelay, setRetryDelay] = useState<number | undefined>(workflow?.retryDelay)
 
   const canSave = name.trim() !== '' && steps.length > 0
+  const retryEnabled = (retryCount ?? 0) > 0
 
   const handleSave = useCallback(() => {
     const trimmed = name.trim()
@@ -178,8 +224,16 @@ function WorkflowEditor({
       setNameError('A workflow with this name already exists')
       return
     }
-    onSave({ id: workflow?.id ?? crypto.randomUUID(), name: trimmed, params, steps })
-  }, [name, existingNames, workflow, params, steps, onSave])
+    const normalizedRetryCount = retryCount ? normalizeRetryInput(String(retryCount)) : undefined
+    onSave({
+      id: workflow?.id ?? crypto.randomUUID(),
+      name: trimmed,
+      params,
+      steps: stripStepRetryFields(steps),
+      retryCount: normalizedRetryCount,
+      retryDelay: normalizedRetryCount ? retryDelay : undefined,
+    })
+  }, [name, existingNames, workflow, params, steps, retryCount, retryDelay, onSave])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -213,8 +267,15 @@ function WorkflowEditor({
     })
 
   const handleExport = () => {
+    const normalizedRetryCount = retryCount ? normalizeRetryInput(String(retryCount)) : undefined
     const blob = new Blob(
-      [JSON.stringify({ name, params, steps }, null, 2)],
+      [JSON.stringify({
+        name,
+        params,
+        steps: stripStepRetryFields(steps),
+        retryCount: normalizedRetryCount,
+        retryDelay: normalizedRetryCount ? retryDelay : undefined,
+      }, null, 2)],
       { type: 'application/json' }
     )
     const url = URL.createObjectURL(blob)
@@ -226,6 +287,12 @@ function WorkflowEditor({
   }
 
   const handleDelete = () => setShowDeleteConfirm(true)
+
+  const toggleRetry = (enabled: boolean) => {
+    const patch = buildWorkflowRetryTogglePatch(enabled, { retryCount, retryDelay })
+    setRetryCount(patch.retryCount)
+    setRetryDelay(patch.retryDelay)
+  }
 
   return (
     <>
@@ -357,12 +424,47 @@ function WorkflowEditor({
 
         {/* Steps — right column, row 2 */}
         <div className="wf-ed-section">
-          <div className="wf-ed-section-hd">
+          <div className="wf-ed-section-hd wf-ed-steps-hd">
             <label>Steps</label>
             <span className="ed-hint">{steps.length} · run top-to-bottom</span>
-            <button className="btn btn-ghost btn-sm wf-ed-add" onClick={addStep}>
-              <IconPlus/> Add step
-            </button>
+            <div className="wf-ed-retry-controls">
+              <label className="wf-ed-retry-toggle" title="Retry failed retryable steps">
+                <span>Retry</span>
+                <input
+                  type="checkbox"
+                  className="toggle-switch"
+                  checked={retryEnabled}
+                  onChange={e => toggleRetry(e.target.checked)}
+                />
+              </label>
+              <input
+                className="form-input wf-ed-retry-count"
+                type="number"
+                min="0"
+                max="10"
+                step="1"
+                value={retryCount ?? ''}
+                onChange={e => {
+                  const next = normalizeRetryInput(e.target.value)
+                  setRetryCount(next)
+                  if (!next) setRetryDelay(undefined)
+                }}
+                placeholder="Retries"
+                title="Extra retries after each failed retryable step"
+                disabled={!retryEnabled}
+              />
+              <input
+                className="form-input wf-ed-retry-delay"
+                type="number"
+                min="0"
+                step="0.1"
+                value={retryDelay != null ? retryDelay / 1000 : ''}
+                onChange={e => setRetryDelay(normalizeRetryDelayInput(e.target.value))}
+                placeholder="0.5 s"
+                title="Delay between retry attempts"
+                disabled={!retryEnabled}
+              />
+            </div>
           </div>
           <div className="wf-ed-section-body flush">
             <div className="wf-ed-steps">
@@ -392,6 +494,13 @@ function WorkflowEditor({
                   onDragEnd={() => { setDraggingIdx(null); setOverIdx(null) }}
                 />
               ))}
+              {steps.length > 0 && (
+                <div className="wf-ed-add-step-row">
+                  <button className="btn btn-ghost btn-sm" onClick={addStep}>
+                    <IconPlus/> Add step
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -434,7 +543,7 @@ function StepRow({
   onDragEnd: () => void
 }) {
   const changeType = (type: WorkflowStep['type']) =>
-    onUpdate({ type, selector: undefined, url: undefined, value: undefined, timeout: undefined })
+    onUpdate(buildStepTypePatch(type))
 
   const renderFields = () => {
     switch (step.type) {

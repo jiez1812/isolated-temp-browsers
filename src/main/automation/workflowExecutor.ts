@@ -8,6 +8,35 @@ type StatusCallback = (event: WorkflowStatusEvent) => void
 type DebugLogFn = (level: DebugLogEvent['level'], message: string) => void
 type StepEventFn = (event: Omit<WorkflowStepEvent, 'contextId' | 'workflowId'>) => void
 
+const DEFAULT_RETRY_DELAY = 500
+const MAX_RETRY_COUNT = 10
+const RETRYABLE_STEP_TYPES = new Set<WorkflowStep['type']>([
+  'goto',
+  'click',
+  'fill',
+  'selectOption',
+  'wait',
+  'assert',
+  'waitForText',
+  'waitForDownload',
+])
+
+export function normalizeRetryCount(source: Pick<Workflow | WorkflowStep, 'retryCount'>): number {
+  if (source.retryCount == null || !Number.isFinite(source.retryCount)) return 0
+  return Math.min(MAX_RETRY_COUNT, Math.max(0, Math.floor(source.retryCount)))
+}
+
+export function normalizeRetryDelay(source: Pick<Workflow | WorkflowStep, 'retryDelay'>): number {
+  if (source.retryDelay == null || !Number.isFinite(source.retryDelay)) return DEFAULT_RETRY_DELAY
+  return Math.max(0, Math.floor(source.retryDelay))
+}
+
+export function isRetryableStep(step: WorkflowStep, workflowRetryEnabled = false): boolean {
+  if (step.type === 'waitSeconds' || step.type === 'closeBrowser') return false
+  if (step.type === 'goto') return workflowRetryEnabled || normalizeRetryCount(step) > 0
+  return RETRYABLE_STEP_TYPES.has(step.type)
+}
+
 class WorkflowExecutor {
   async run(
     workflow: Workflow,
@@ -68,7 +97,7 @@ class WorkflowExecutor {
           break
         }
         try {
-          await this.executeStep(page, step, params, downloadBaseline)
+          await this.executeStepWithRetry(page, workflow, step, params, downloadBaseline, prefix, onDebugLog)
           const duration = Date.now() - t0
           onDebugLog?.('info', `${prefix} done (${duration}ms)`)
           onStepEvent?.({ stepIndex: i, total, status: 'done', label, duration })
@@ -92,6 +121,39 @@ class WorkflowExecutor {
       })
       throw err
     }
+  }
+
+  private async executeStepWithRetry(
+    page: import('playwright').Page,
+    workflow: Workflow,
+    step: WorkflowStep,
+    params: Record<string, string>,
+    downloadBaseline: Set<string>,
+    prefix: string,
+    onDebugLog?: DebugLogFn
+  ): Promise<void> {
+    const { retryCount, retryDelay } = this.getRetryPolicy(workflow, step)
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
+      try {
+        await this.executeStep(page, step, params, downloadBaseline)
+        return
+      } catch (err) {
+        if (attempt >= retryCount) throw err
+        const msg = err instanceof Error ? err.message : String(err)
+        const retryNo = attempt + 1
+        onDebugLog?.('warn', `${prefix} retry ${retryNo}/${retryCount} after error: ${msg}`)
+        if (retryDelay > 0) await page.waitForTimeout(retryDelay)
+      }
+    }
+  }
+
+  private getRetryPolicy(workflow: Workflow, step: WorkflowStep): { retryCount: number; retryDelay: number } {
+    const workflowRetryCount = normalizeRetryCount(workflow)
+    if (workflowRetryCount > 0 && isRetryableStep(step, true)) {
+      return { retryCount: workflowRetryCount, retryDelay: normalizeRetryDelay(workflow) }
+    }
+    if (!isRetryableStep(step)) return { retryCount: 0, retryDelay: DEFAULT_RETRY_DELAY }
+    return { retryCount: normalizeRetryCount(step), retryDelay: normalizeRetryDelay(step) }
   }
 
   private buildStepLabel(step: WorkflowStep, params: Record<string, string>, maskedKeys: Set<string>): string {

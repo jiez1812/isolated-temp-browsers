@@ -4,6 +4,8 @@ export interface WorkflowStep {
   value?: string
   url?: string
   timeout?: number
+  retryCount?: number
+  retryDelay?: number
 }
 
 export interface WorkflowParam {
@@ -18,6 +20,8 @@ export interface Workflow {
   name: string
   steps: WorkflowStep[]
   params: WorkflowParam[]
+  retryCount?: number
+  retryDelay?: number
 }
 
 export interface WindowSize {
@@ -68,6 +72,8 @@ export interface ProfileExportWorkflow {
   name: string
   steps: WorkflowStep[]
   params: WorkflowParam[]
+  retryCount?: number
+  retryDelay?: number
 }
 
 export interface ProfileExport {

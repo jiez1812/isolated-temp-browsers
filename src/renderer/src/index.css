@@ -2067,6 +2067,36 @@ select optgroup {
 /* Steps list (right column) */
 .wf-ed-steps { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
 
+.wf-ed-steps-hd { flex-wrap: wrap; }
+
+.wf-ed-retry-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.wf-ed-retry-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--fg-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wf-ed-retry-controls .form-input {
+  height: 28px;
+  font-size: 12px;
+}
+
+.wf-ed-retry-count { width: 84px; }
+.wf-ed-retry-delay { width: 96px; }
+
 .wf-ed-step {
   display: grid;
   grid-template-columns: 16px 28px 150px 1fr 1fr 28px;
@@ -2114,7 +2144,7 @@ select optgroup {
   flex-shrink: 0;
 }
 
-/* Single field spanning cols 4–5 */
+/* Single field spanning the primary value columns */
 .wf-ed-step-single { grid-column: 4 / 6; }
 
 /* No-fields placeholder (closeBrowser) */
@@ -2148,6 +2178,12 @@ select optgroup {
 }
 .wf-ed-timeout-cell .form-input { flex: 1; min-width: 0; }
 .wf-ed-timeout-cell .wf-step-infinite { flex-shrink: 0; }
+
+.wf-ed-add-step-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 2px 0;
+}
 
 /* Empty states inside sections */
 .wf-ed-empty {
