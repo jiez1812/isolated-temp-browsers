@@ -46,6 +46,43 @@ body {
   --mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
+/* ── Native control polish ── */
+
+#root,
+#root * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+
+#root ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+#root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#root ::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--border-2), var(--border-2)) content-box,
+    linear-gradient(transparent, transparent);
+  background-clip: content-box, border-box;
+}
+
+#root ::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(oklch(1 0 0 / 0.22), oklch(1 0 0 / 0.22)) content-box,
+    linear-gradient(transparent, transparent);
+}
+
+#root ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Ambient layered gradient — gives the glass something to blur against */
 #root::before {
   content: "";
@@ -377,14 +414,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  scrollbar-width: thin;
-}
-.app-body::-webkit-scrollbar { width: 10px; height: 10px; }
-.app-body::-webkit-scrollbar-thumb {
-  background: var(--border-2);
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: content-box;
 }
 
 /* ── Settings view ── */
@@ -1220,6 +1249,32 @@ body {
   box-shadow: 0 0 0 2.5px oklch(0.64 var(--accent-c) var(--accent-h) / 0.2);
 }
 .form-input::placeholder { color: var(--fg-3); }
+.form-input[type="number"] {
+  padding-right: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.form-input[type="number"]::-webkit-inner-spin-button,
+.form-input[type="number"]::-webkit-outer-spin-button {
+  width: 18px;
+  min-height: 28px;
+  margin: 0;
+  opacity: 1;
+  cursor: pointer;
+  filter: invert(1) opacity(0.42);
+}
+.form-input[type="number"]:hover::-webkit-inner-spin-button,
+.form-input[type="number"]:hover::-webkit-outer-spin-button {
+  filter: invert(1) opacity(0.68);
+}
+.form-input[type="number"]:focus::-webkit-inner-spin-button,
+.form-input[type="number"]:focus::-webkit-outer-spin-button {
+  filter: invert(1) opacity(0.86);
+}
+.form-input[type="number"]:disabled::-webkit-inner-spin-button,
+.form-input[type="number"]:disabled::-webkit-outer-spin-button {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
 .form-input--sm { width: 100px; }
 .form-input--error { border-color: var(--danger); }
 .form-input-error { font-size: 10.5px; color: oklch(0.72 0.18 25); margin-top: 3px; }
@@ -1513,7 +1568,6 @@ select optgroup {
   padding: 6px 12px 8px;
   font: 11.5px/1.55 var(--mono);
   color: var(--fg-2);
-  scrollbar-width: thin;
 }
 
 .debug-console-empty {
@@ -1713,7 +1767,6 @@ select optgroup {
   flex: 1;
   overflow: auto;
   padding: 6px;
-  scrollbar-width: thin;
 }
 
 .mini-row {
@@ -1966,14 +2019,6 @@ select optgroup {
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  scrollbar-width: thin;
-}
-.wf-ed-section-body::-webkit-scrollbar { width: 8px; }
-.wf-ed-section-body::-webkit-scrollbar-thumb {
-  background: var(--border-2);
-  border-radius: 5px;
-  border: 2px solid transparent;
-  background-clip: content-box;
 }
 .wf-ed-section-body.flush { padding: 0; }
 
