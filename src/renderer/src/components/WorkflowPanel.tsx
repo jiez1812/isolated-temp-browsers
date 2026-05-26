@@ -32,6 +32,7 @@ interface Props {
 
 const STEP_LABELS: Record<WorkflowStep['type'], string> = {
   goto:         'Go to URL',
+  captureUrlParam: 'Capture URL parameter',
   fill:         'Fill input',
   click:        'Click',
   selectOption: 'Select option',
@@ -44,7 +45,7 @@ const STEP_LABELS: Record<WorkflowStep['type'], string> = {
 }
 
 const STEP_GROUPS: { label: string; types: WorkflowStep['type'][] }[] = [
-  { label: 'Navigation',  types: ['goto'] },
+  { label: 'Navigation',  types: ['goto', 'captureUrlParam'] },
   { label: 'Interaction', types: ['fill', 'click', 'selectOption'] },
   { label: 'Assertions',  types: ['assert', 'wait', 'waitForText'] },
   { label: 'Timing',      types: ['waitSeconds'] },
@@ -94,6 +95,8 @@ export function buildStepTypePatch(type: WorkflowStep['type']): Partial<Workflow
     url: undefined,
     value: undefined,
     timeout: undefined,
+    paramName: undefined,
+    saveAs: undefined,
     retryCount: undefined,
     retryDelay: undefined,
   }
@@ -582,6 +585,23 @@ function StepRow({
             onChange={e => onUpdate({ url: e.target.value })}
             placeholder="https://example.com or {{param}}"
           />
+        )
+      case 'captureUrlParam':
+        return (
+          <>
+            <input
+              className="form-input"
+              value={step.paramName ?? ''}
+              onChange={e => onUpdate({ paramName: e.target.value })}
+              placeholder="URL key, e.g. token_id"
+            />
+            <input
+              className="form-input"
+              value={step.saveAs ?? ''}
+              onChange={e => onUpdate({ saveAs: e.target.value || undefined })}
+              placeholder="Save as, defaults to same key"
+            />
+          </>
         )
       case 'click':
         return (

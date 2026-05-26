@@ -33,6 +33,8 @@ describe('WorkflowPanel retry controls', () => {
       url: undefined,
       value: undefined,
       timeout: undefined,
+      paramName: undefined,
+      saveAs: undefined,
       retryCount: undefined,
       retryDelay: undefined,
     })

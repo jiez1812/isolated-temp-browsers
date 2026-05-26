@@ -112,6 +112,7 @@ describe('workflowExecutor retry policy', () => {
     waitForSelector: vi.fn().mockResolvedValue(undefined),
     waitForFunction: vi.fn().mockResolvedValue(undefined),
     goto: vi.fn().mockResolvedValue(undefined),
+    url: vi.fn(() => 'https://example.com/start?token_id=abc123'),
   })
 
   beforeEach(() => {
@@ -157,6 +158,35 @@ describe('workflowExecutor retry policy', () => {
     expect(page.click).toHaveBeenCalledTimes(2)
     expect(logs).toHaveBeenCalledWith('warn', expect.stringContaining('retry 1/1 after error: covered'))
     expect(stepEvents).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'done' }))
+  })
+
+  it('captures a URL query parameter for later interpolation', async () => {
+    const page = makePage()
+
+    await workflowExecutor.run(
+      makeWorkflow([
+        { type: 'captureUrlParam', paramName: 'token_id' },
+        { type: 'goto', url: 'https://target.example.com/demo?token_id={{token_id}}' },
+      ]),
+      makeContext(page) as any,
+      {},
+      vi.fn()
+    )
+
+    expect(page.goto).toHaveBeenCalledWith('https://target.example.com/demo?token_id=abc123')
+  })
+
+  it('fails when a captured URL parameter is missing', async () => {
+    const page = makePage()
+
+    await expect(
+      workflowExecutor.run(
+        makeWorkflow([{ type: 'captureUrlParam', paramName: 'missing_id' }]),
+        makeContext(page) as any,
+        {},
+        vi.fn()
+      )
+    ).rejects.toThrow('captureUrlParam: "missing_id" was not found in the current URL')
   })
 
   it('fails after all workflow-level retry attempts are exhausted', async () => {

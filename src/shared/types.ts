@@ -1,8 +1,10 @@
 export interface WorkflowStep {
-  type: 'goto' | 'fill' | 'click' | 'selectOption' | 'wait' | 'assert' | 'waitForText' | 'waitSeconds' | 'waitForDownload' | 'closeBrowser'
+  type: 'goto' | 'captureUrlParam' | 'fill' | 'click' | 'selectOption' | 'wait' | 'assert' | 'waitForText' | 'waitSeconds' | 'waitForDownload' | 'closeBrowser'
   selector?: string
   value?: string
   url?: string
+  paramName?: string
+  saveAs?: string
   timeout?: number
   retryCount?: number
   retryDelay?: number

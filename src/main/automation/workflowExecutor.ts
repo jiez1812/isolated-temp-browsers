@@ -12,6 +12,7 @@ const DEFAULT_RETRY_DELAY = 500
 const MAX_RETRY_COUNT = 10
 const RETRYABLE_STEP_TYPES = new Set<WorkflowStep['type']>([
   'goto',
+  'captureUrlParam',
   'click',
   'fill',
   'selectOption',
@@ -170,6 +171,11 @@ class WorkflowExecutor {
     }
     switch (step.type) {
       case 'goto':   return `goto  ${resolve(step.url)}`
+      case 'captureUrlParam': {
+        const source = resolve(step.paramName)
+        const target = resolve(step.saveAs) || source
+        return `captureUrlParam  ${source}  →  {{${target}}}`
+      }
       case 'fill':   return `fill  ${step.selector}  →  "${resolve(step.value)}"`
       case 'click':        return `click  ${step.selector}`
       case 'selectOption': return `selectOption  ${step.selector}  →  "${resolve(step.value)}"`
@@ -198,6 +204,20 @@ class WorkflowExecutor {
       case 'goto':
         await page.goto(resolve(step.url))
         break
+      case 'captureUrlParam': {
+        const source = resolve(step.paramName).trim()
+        const target = (resolve(step.saveAs).trim() || source)
+        if (!source) throw new Error('captureUrlParam: URL parameter name is required')
+        if (!target) throw new Error('captureUrlParam: target parameter name is required')
+
+        const extracted = this.getUrlParameter(page.url(), source)
+        if (extracted == null) {
+          throw new Error(`captureUrlParam: "${source}" was not found in the current URL`)
+        }
+
+        params[target] = extracted
+        break
+      }
       case 'fill':
         await page.fill(resolve(step.selector), resolve(step.value))
         break
@@ -259,6 +279,25 @@ class WorkflowExecutor {
         break
       }
     }
+  }
+
+  private getUrlParameter(url: string, name: string): string | null {
+    const parsed = new URL(url)
+    const direct = parsed.searchParams.get(name)
+    if (direct != null) return direct
+
+    const hash = parsed.hash.replace(/^#/, '')
+    if (!hash) return null
+
+    const hashDirect = new URLSearchParams(hash).get(name)
+    if (hashDirect != null) return hashDirect
+
+    const hashQueryIndex = hash.indexOf('?')
+    if (hashQueryIndex >= 0) {
+      return new URLSearchParams(hash.slice(hashQueryIndex + 1)).get(name)
+    }
+
+    return null
   }
 }
 
