@@ -4,7 +4,6 @@ import type {
   AppInfo,
   AppSettings,
   AppSettingsPatch,
-  AppUpdateState,
   ContextBrowserConfig,
   DataRootChangeResult,
   Profile,
@@ -53,9 +52,6 @@ contextBridge.exposeInMainWorld('api', {
   resetDataRoot: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.SETTINGS_RESET_DATA_ROOT),
   openDataRoot: (): Promise<void> => ipcRenderer.invoke(IPC.SETTINGS_OPEN_DATA_ROOT),
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC.APP_INFO),
-  getAppUpdateState: (): Promise<AppUpdateState> => ipcRenderer.invoke(IPC.APP_UPDATE_STATE),
-  checkForAppUpdates: (): Promise<AppUpdateState> => ipcRenderer.invoke(IPC.APP_UPDATE_CHECK),
-  installAppUpdate: (): Promise<void> => ipcRenderer.invoke(IPC.APP_UPDATE_INSTALL),
 
   // Window controls
   minimizeWindow: (): void => ipcRenderer.send(IPC.WINDOW_MINIMIZE),
@@ -87,11 +83,5 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_e: Electron.IpcRendererEvent, id: string): void => callback(id)
     ipcRenderer.on(IPC.CONTEXT_CLOSED, handler)
     return () => ipcRenderer.removeListener(IPC.CONTEXT_CLOSED, handler)
-  },
-
-  onAppUpdateStatus: (callback: (state: AppUpdateState) => void): (() => void) => {
-    const handler = (_e: Electron.IpcRendererEvent, state: AppUpdateState): void => callback(state)
-    ipcRenderer.on(IPC.APP_UPDATE_STATUS, handler)
-    return () => ipcRenderer.removeListener(IPC.APP_UPDATE_STATUS, handler)
   }
 })

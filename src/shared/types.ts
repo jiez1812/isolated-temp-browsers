@@ -114,24 +114,6 @@ export interface AppInfo {
   version: string
 }
 
-export interface AppUpdateProgress {
-  bytesPerSecond: number
-  percent: number
-  transferred: number
-  total: number
-}
-
-export interface AppUpdateState {
-  status: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
-  currentVersion: string
-  availableVersion?: string
-  downloadedVersion?: string
-  message?: string
-  progress?: AppUpdateProgress
-  canCheck: boolean
-  canInstall: boolean
-}
-
 export type DataRootChangeResult =
   | { status: 'ok'; settings: AppSettings }
   | { status: 'cancelled' }

@@ -1,36 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   FaArrowLeft as IconBack,
-  FaDownload as IconDownload,
   FaFolderOpen as IconFolder,
-  FaSyncAlt as IconRefresh,
 } from 'react-icons/fa'
-import type { AppInfo, AppSettings, AppUpdateState } from '../../../shared/types'
+import type { AppInfo, AppSettings } from '../../../shared/types'
 import { MAX_WORKFLOW_RETRY_COUNT } from '../../../shared/settings'
 import { isUsingDefaultDataRoot } from '../utils/settingsView'
-
-function getUpdateStatusText(state: AppUpdateState | null): string {
-  if (!state) return 'Update status unavailable'
-  if (!state.canCheck && state.message) return state.message
-
-  switch (state.status) {
-    case 'checking':
-      return 'Checking for updates...'
-    case 'available':
-      return `Version ${state.availableVersion ?? 'newer'} found`
-    case 'downloading':
-      return `Downloading update ${Math.round(state.progress?.percent ?? 0)}%`
-    case 'downloaded':
-      return `Version ${state.downloadedVersion ?? state.availableVersion ?? 'newer'} ready to install`
-    case 'not-available':
-      return 'You are up to date'
-    case 'error':
-      return state.message ?? 'Update check failed'
-    case 'idle':
-    default:
-      return 'Ready to check for updates'
-  }
-}
 
 interface Props {
   settings: AppSettings | null
@@ -48,35 +23,6 @@ export default function SettingsPage({
   onNotify,
 }: Props) {
   const [busy, setBusy] = useState(false)
-  const [updateBusy, setUpdateBusy] = useState(false)
-  const [updateState, setUpdateState] = useState<AppUpdateState | null>(null)
-
-  useEffect(() => {
-    let active = true
-
-    window.api.getAppUpdateState()
-      .then(state => {
-        if (active) setUpdateState(state)
-      })
-      .catch(err => {
-        if (!active) return
-
-        setUpdateState({
-          status: 'error',
-          currentVersion: appInfo?.version ?? 'Unknown',
-          message: String(err),
-          canCheck: false,
-          canInstall: false,
-        })
-      })
-
-    const off = window.api.onAppUpdateStatus(state => setUpdateState(state))
-
-    return () => {
-      active = false
-      off()
-    }
-  }, [appInfo?.version])
 
   const handleChooseLocation = async () => {
     setBusy(true)
@@ -114,34 +60,6 @@ export default function SettingsPage({
       await window.api.openDataRoot()
     } catch (err) {
       onNotify('error', `Failed to open folder: ${err}`)
-    }
-  }
-
-  const handleCheckForUpdates = async () => {
-    setUpdateBusy(true)
-    try {
-      const state = await window.api.checkForAppUpdates()
-      setUpdateState(state)
-
-      if (state.message && !state.canCheck) {
-        onNotify('info', state.message)
-      } else if (state.status === 'error' && state.message) {
-        onNotify('error', state.message)
-      }
-    } catch (err) {
-      onNotify('error', `Failed to check for updates: ${err}`)
-    } finally {
-      setUpdateBusy(false)
-    }
-  }
-
-  const handleInstallUpdate = async () => {
-    setUpdateBusy(true)
-    try {
-      await window.api.installAppUpdate()
-    } catch (err) {
-      setUpdateBusy(false)
-      onNotify('error', `Failed to install update: ${err}`)
     }
   }
 
@@ -208,11 +126,6 @@ export default function SettingsPage({
   }
 
   const usingDefaultRoot = isUsingDefaultDataRoot(settings)
-  const checkingForUpdates =
-    updateBusy || updateState?.status === 'checking' || updateState?.status === 'downloading'
-  const updateCanCheck = updateState?.canCheck ?? false
-  const updateCanInstall = updateState?.canInstall ?? false
-  const updateStatus = getUpdateStatusText(updateState)
 
   return (
     <div className="settings-page">
@@ -259,26 +172,6 @@ export default function SettingsPage({
             <div className="settings-row-main">
               <span className="settings-label">Version</span>
               <span className="settings-value">{appInfo?.version ?? 'Unknown'}</span>
-              <span className="settings-hint">{updateStatus}</span>
-            </div>
-            <div className="settings-actions">
-              {updateCanInstall ? (
-                <button
-                  className="btn btn-primary"
-                  onClick={handleInstallUpdate}
-                  disabled={updateBusy}
-                >
-                  <IconDownload/> Install Update
-                </button>
-              ) : (
-                <button
-                  className="btn btn-secondary"
-                  onClick={handleCheckForUpdates}
-                  disabled={checkingForUpdates || !updateCanCheck}
-                >
-                  <IconRefresh/> {checkingForUpdates ? 'Checking...' : 'Check for Updates'}
-                </button>
-              )}
             </div>
           </div>
         </section>

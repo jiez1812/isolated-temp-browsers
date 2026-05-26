@@ -2,7 +2,6 @@ import type {
   AppInfo,
   AppSettings,
   AppSettingsPatch,
-  AppUpdateState,
   ContextBrowserConfig,
   DataRootChangeResult,
   Profile,
@@ -50,10 +49,6 @@ declare global {
       resetDataRoot: () => Promise<AppSettings>
       openDataRoot: () => Promise<void>
       getAppInfo: () => Promise<AppInfo>
-      getAppUpdateState: () => Promise<AppUpdateState>
-      checkForAppUpdates: () => Promise<AppUpdateState>
-      installAppUpdate: () => Promise<void>
-      onAppUpdateStatus: (callback: (state: AppUpdateState) => void) => () => void
 
       minimizeWindow: () => void
       toggleAlwaysOnTop: () => Promise<boolean>

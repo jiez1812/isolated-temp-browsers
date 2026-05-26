@@ -9,8 +9,7 @@
     "preview": "electron-vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dist:win": "electron-vite build && electron-builder --win --publish never",
-    "dist:win:publish": "electron-vite build && electron-builder --win --publish always"
+    "dist:win": "electron-vite build && electron-builder --win --publish never"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -36,7 +35,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "electron-updater": "^6.8.3",
     "js-yaml": "^4.1.1",
     "playwright": "^1.59.1",
     "react": "^19.2.5",

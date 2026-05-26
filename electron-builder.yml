@@ -1,11 +1,6 @@
 appId: com.isolatedtempbrowsers.app
 productName: Isolated Temp Browsers
 
-publish:
-  provider: github
-  owner: jiez1812
-  repo: isolated-temp-browsers
-
 directories:
   output: dist
   buildResources: resources

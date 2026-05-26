@@ -5,7 +5,6 @@ import { browserManager, detectBrowsers } from './browser/browserManager'
 import { registerContextHandlers } from './ipc/contextHandlers'
 import { registerProfileHandlers } from './ipc/profileHandlers'
 import { registerSettingsHandlers } from './ipc/settingsHandlers'
-import { registerUpdateHandlers } from './ipc/updateHandlers'
 import { registerWorkflowHandlers } from './ipc/workflowHandlers'
 import { registerWindowHandlers } from './ipc/windowHandlers'
 import { IPC } from '../shared/ipc'
@@ -47,7 +46,6 @@ app.whenReady().then(() => {
 
   const win = createWindow()
   registerWindowHandlers(ipcMain, win)
-  registerUpdateHandlers(ipcMain, win)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
